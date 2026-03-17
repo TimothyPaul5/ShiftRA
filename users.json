@@ -1,0 +1,27 @@
+[
+  {
+    "userID": "A001",
+    "name": "Housing Admin",
+    "email": "admin@school.edu",
+    "passwordHash": "admin123",
+    "role": "admin",
+    "active": true
+  },
+  {
+    "userID": "RA001",
+    "name": "Timothy Paul",
+    "email": "timothy@school.edu",
+    "passwordHash": "ra123",
+    "role": "ra",
+    "active": true,
+    "residenceHall": "Apollo Hall"
+  },
+  {
+    "userID": "32114",
+    "name": "Timothy Paul",
+    "email": "pault5@my.erau.edu",
+    "passwordHash": "password1",
+    "role": "admin",
+    "active": true
+  }
+]
