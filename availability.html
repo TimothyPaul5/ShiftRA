@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RA Availability</title>
+
+<style>
+/* CSS section of the code */
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    display: flex;
+    justify-content: center;
+    padding-top: 40px;
+}
+
+.container {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    width: 420px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.tabs button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    background: #ddd;
+}
+
+.tabs button.active {
+    background: #4CAF50;
+    color: white;
+}
+
+/* Inputs */
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* Slot styling */
+.slot {
+    display: flex;
+    gap: 5px;
+    margin: 6px 0;
+}
+
+.slot button {
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Calendar */
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.cell {
+    padding: 12px;
+    background: #eee;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.cell.selected {
+    background: #4CAF50;
+    color: white;
+}
+
+/* Buttons */
+.main-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+/* Preview */
+.preview {
+    margin-top: 10px;
+    background: #eef;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    white-space: pre-line;
+}
+/* End of CSS */
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>RA Availability</h2>
+
+<input type="text" id="userID" placeholder="Enter your ID">
+
+<div class="tabs">
+    <button class="active" onclick="showTab('slots')">Time Slots</button>
+    <button onclick="showTab('calendar')">Calendar</button>
+</div>
+
+<!-- Slot view -->
+<div id="slotsView">
+    <div id="slots"></div>
+    <button class="main-btn" onclick="addSlot()">+ Add Time</button>
+    <button class="main-btn" onclick="submitSlots()">Submit Slots</button>
+</div>
+
+<!-- Calender view -->
+<div id="calendarView" style="display:none;">
+    <div class="calendar" id="calendar"></div>
+    <button class="main-btn" onclick="submitCalendar()">Submit Calendar</button>
+</div>
+
+<div class="preview" id="previewBox">Your availability will appear here...</div>
+
+</div>
+
+<script>
+// switch between calendar view and time slot view 
+
+function showTab(tab) {
+    document.getElementById("slotsView").style.display = tab === "slots" ? "block" : "none";
+    document.getElementById("calendarView").style.display = tab === "calendar" ? "block" : "none";
+
+    document.querySelectorAll(".tabs button").forEach(btn => btn.classList.remove("active"));
+    event.target.classList.add("active");
+}
+
+// Multiple slots
+function addSlot() {
+    const container = document.getElementById("slots");
+
+    const slot = document.createElement("div");
+    slot.className = "slot";
+
+    slot.innerHTML = `
+        <select class="day">
+            <option value="Mon">Mon</option>
+            <option value="Tue">Tue</option>
+            <option value="Wed">Wed</option>
+            <option value="Thu">Thu</option>
+            <option value="Fri">Fri</option>
+        </select>
+
+        <input type="time" class="startTime">
+        <input type="time" class="endTime">
+
+        <button onclick="this.parentElement.remove()">X</button>
+    `;
+
+    container.appendChild(slot);
+}
+
+function submitSlots() {
+    const userID = document.getElementById("userID").value;
+    const slots = document.querySelectorAll(".slot");
+
+    let results = [];
+
+    slots.forEach(slot => {
+        const day = slot.querySelector(".day").value;
+        const start = slot.querySelector(".startTime").value;
+        const end = slot.querySelector(".endTime").value;
+
+        if (start && end) {
+            results.push(`${day} ${start}-${end}`);
+        }
+    });
+
+    console.log({ userID, availability: results });
+
+    document.getElementById("previewBox").innerText =
+        "Submitted Slots:\n" + results.join("\n");
+}
+
+// Calendar
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const hours = ["9AM", "11AM", "1PM", "3PM", "5PM"];
+
+function createCalendar() {
+    const calendar = document.getElementById("calendar");
+
+    days.forEach(day => {
+        hours.forEach(hour => {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.value = `${day} ${hour}`;
+            cell.innerText = `${day}\n${hour}`;
+
+            cell.onclick = () => {
+                cell.classList.toggle("selected");
+            };
+
+            calendar.appendChild(cell);
+        });
+    });
+}
+
+function submitCalendar() {
+    const selected = document.querySelectorAll(".cell.selected");
+
+    const results = Array.from(selected).map(c => c.dataset.value);
+
+    console.log(results);
+
+    document.getElementById("previewBox").innerText =
+        "Selected Times:\n" + results.join("\n");
+}
+
+addSlot();
+createCalendar();
+</script>
+
+</body>
+</html>
