@@ -16,6 +16,7 @@ authService.getAllUsers().forEach(u => {
 });
 
 //comment to test
+//test
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
