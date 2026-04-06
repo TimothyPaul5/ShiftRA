@@ -5,17 +5,9 @@ class Admin extends User {
         super(userID, name, email, passwordHash, "admin", active);
     }
 
-    createUser(userData, authService) {
-        return authService.addUser(userData);
-    }
-
-    deactivateUser(userID, authService) {
-        return authService.deactivateUser(userID);
-    }
-
-    resetUserPassword(userID, newPassword, authService) {
-        return authService.resetPassword(userID, newPassword);
-    }
+    createUser(userData, authService) { return authService.addUser(userData); }
+    deactivateUser(userID, authService) { return authService.deactivateUser(userID); }
+    resetUserPassword(userID, newPass, authService) { return authService.resetPassword(userID, newPass); }
 }
 
 module.exports = Admin;

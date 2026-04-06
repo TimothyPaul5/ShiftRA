@@ -1,14 +1,10 @@
 class ScheduledItem {
-    constructor(raName, day, startTime, endTime) {
+    constructor(raName, day, start, end) {
         this.raName = raName;
         this.day = day;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startTime = start;
+        this.endTime = end;
     }
-
-    toString() {
-        return `${this.day}: ${this.raName} from ${this.startTime} to ${this.endTime}`;
-    }
+    toString() { return `${this.day}: ${this.raName} ${this.startTime}-${this.endTime}`; }
 }
-
 module.exports = ScheduledItem;

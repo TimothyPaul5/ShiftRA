@@ -7,21 +7,10 @@ class RA extends User {
         this.availability = [];
     }
 
-    getResidenceHall() {
-        return this.residenceHall;
-    }
-
-    setResidenceHall(residenceHall) {
-        this.residenceHall = residenceHall;
-    }
-
-    submitAvailability(timeBlock) {
-        this.availability.push(timeBlock);
-    }
-
-    getAvailability() {
-        return this.availability;
-    }
+    getResidenceHall() { return this.residenceHall; }
+    setResidenceHall(r) { this.residenceHall = r; }
+    submitAvailability(timeBlock) { this.availability.push(timeBlock); }
+    getAvailability() { return this.availability; }
 
     toJSON() {
         return {

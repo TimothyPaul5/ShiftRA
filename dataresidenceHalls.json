@@ -1,0 +1,18 @@
+[
+  {
+    "hallID": "RH001",
+    "name": "New Res Hall 3",
+    "capacity": 12,
+    "raIDs": [
+      "RA001"
+    ]
+  },
+  {
+    "hallID": "RH002",
+    "name": "Chanute",
+    "capacity": 4,
+    "raIDs": [
+      "RA002"
+    ]
+  }
+]

@@ -8,45 +8,17 @@ class User {
         this.active = active;
     }
 
-    getUserID() {
-        return this.userID;
-    }
+    getUserID() { return this.userID; }
+    getName() { return this.name; }
+    getEmail() { return this.email; }
+    getPasswordHash() { return this.passwordHash; }
+    getRole() { return this.role; }
+    isActive() { return this.active; }
 
-    getName() {
-        return this.name;
-    }
-
-    getEmail() {
-        return this.email;
-    }
-
-    getPasswordHash() {
-        return this.passwordHash;
-    }
-
-    getRole() {
-        return this.role;
-    }
-
-    isActive() {
-        return this.active;
-    }
-
-    setName(name) {
-        this.name = name;
-    }
-
-    setEmail(email) {
-        this.email = email;
-    }
-
-    setPasswordHash(passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    setActive(active) {
-        this.active = active;
-    }
+    setName(name) { this.name = name; }
+    setEmail(email) { this.email = email; }
+    setPasswordHash(ph) { this.passwordHash = ph; }
+    setActive(active) { this.active = active; }
 
     toJSON() {
         return {

@@ -3,159 +3,64 @@ const path = require("path");
 const User = require("./User");
 const Admin = require("./Admin");
 const RA = require("./RA");
-
 class AuthService {
-    constructor(filePath = path.join(__dirname, "users.json")) {
+    constructor(filePath = path.join(__dirname, "data/users.json")) {
         this.filePath = filePath;
     }
-
     loadUsers() {
-        if (!fs.existsSync(this.filePath)) {
-            fs.writeFileSync(this.filePath, "[]", "utf-8");
-        }
-
-        const data = fs.readFileSync(this.filePath, "utf-8").trim();
-
-        if (!data) {
-            return [];
-        }
-
-        const users = JSON.parse(data);
-
-        return users.map((user) => {
-            if (user.role === "admin") {
-                return new Admin(
-                    user.userID,
-                    user.name,
-                    user.email,
-                    user.passwordHash,
-                    user.active
-                );
-            }
-
-            if (user.role === "ra") {
-                return new RA(
-                    user.userID,
-                    user.name,
-                    user.email,
-                    user.passwordHash,
-                    user.residenceHall,
-                    user.active
-                );
-            }
-
-            return new User(
-                user.userID,
-                user.name,
-                user.email,
-                user.passwordHash,
-                user.role,
-                user.active
-            );
+        if (!fs.existsSync(this.filePath)) fs.writeFileSync(this.filePath, "[]");
+        const raw = fs.readFileSync(this.filePath, "utf-8");
+        if (!raw.trim()) return [];
+        const parsed = JSON.parse(raw);
+        return parsed.map(u => {
+            if (u.role === "admin") return new Admin(u.userID, u.name, u.email, u.passwordHash, u.active);
+            if (u.role === "ra") return new RA(u.userID, u.name, u.email, u.passwordHash, u.residenceHall, u.active);
+            return new User(u.userID, u.name, u.email, u.passwordHash, u.role, u.active);
         });
     }
-
     saveUsers(users) {
-        const plainUsers = users.map((user) => user.toJSON());
-        fs.writeFileSync(this.filePath, JSON.stringify(plainUsers, null, 2), "utf-8");
+        fs.writeFileSync(this.filePath, JSON.stringify(users.map(u => u.toJSON()), null, 2));
     }
-
-    login(email, password) {
-        const users = this.loadUsers();
-
-        const user = users.find(
-            (u) => u.getEmail() === email && u.getPasswordHash() === password
-        );
-
-        if (!user) {
-            return { success: false, message: "Invalid email or password." };
-        }
-
-        if (!user.isActive()) {
-            return { success: false, message: "Account is deactivated." };
-        }
-
-        return {
-            success: true,
-            message: "Login successful.",
-            user: {
-                userID: user.getUserID(),
-                name: user.getName(),
-                email: user.getEmail(),
-                role: user.getRole()
-            }
-        };
+    login(email, pass) {
+        const list = this.loadUsers();
+        const u = list.find(x => x.getEmail() === email && x.getPasswordHash() === pass);
+        if (!u) return { success: false, message: "Invalid credentials." };
+        if (!u.isActive()) return { success: false, message: "Account deactivated." };
+        return { success: true, user: u.toJSON() };
     }
-
-    addUser(userData) {
-        const users = this.loadUsers();
-
-        const existingEmail = users.find((u) => u.getEmail() === userData.email);
-        if (existingEmail) {
-            return { success: false, message: "User with this email already exists." };
-        }
-
-        const existingID = users.find((u) => u.getUserID() === userData.userID);
-        if (existingID) {
-            return { success: false, message: "User with this ID already exists." };
-        }
-
-        let newUser;
-
-        if (userData.role === "admin") {
-            newUser = new Admin(
-                userData.userID,
-                userData.name,
-                userData.email,
-                userData.passwordHash,
-                true
-            );
-        } else if (userData.role === "ra") {
-            newUser = new RA(
-                userData.userID,
-                userData.name,
-                userData.email,
-                userData.passwordHash,
-                userData.residenceHall,
-                true
-            );
-        } else {
-            return { success: false, message: "Invalid role." };
-        }
-
-        users.push(newUser);
-        this.saveUsers(users);
-
-        return { success: true, message: "User added successfully." };
+    addUser(uData) {
+        const list = this.loadUsers();
+        if (list.find(u => u.getEmail() === uData.email))
+            return { success: false, message: "Email already exists." };
+        if (list.find(u => u.getUserID() === uData.userID))
+            return { success: false, message: "User ID already exists." };
+        let nu;
+        if (uData.role === "admin")
+            nu = new Admin(uData.userID, uData.name, uData.email, uData.passwordHash, true);
+        else
+            nu = new RA(uData.userID, uData.name, uData.email, uData.passwordHash, uData.residenceHall, true);
+        list.push(nu);
+        this.saveUsers(list);
+        return { success: true };
     }
-
-    deactivateUser(userID) {
-        const users = this.loadUsers();
-        const user = users.find((u) => u.getUserID() === userID);
-
-        if (!user) {
-            return { success: false, message: "User not found." };
-        }
-
-        user.setActive(false);
-        this.saveUsers(users);
-
-        return { success: true, message: "User deactivated successfully." };
+    deactivateUser(id) {
+        const list = this.loadUsers();
+        const u = list.find(x => x.getUserID() === id);
+        if (!u) return { success: false, message: "User not found." };
+        u.setActive(false);
+        this.saveUsers(list);
+        return { success: true };
     }
-
-    resetPassword(userID, newPassword) {
-        const users = this.loadUsers();
-        const user = users.find((u) => u.getUserID() === userID);
-
-        if (!user) {
-            return { success: false, message: "User not found." };
-        }
-
-        user.setPasswordHash(newPassword);
-        this.saveUsers(users);
-
-        return { success: true, message: "Password reset successfully." };
+    resetPassword(id, np) {
+        const list = this.loadUsers();
+        const u = list.find(x => x.getUserID() === id);
+        if (!u) return { success: false, message: "User not found." };
+        u.setPasswordHash(np);
+        this.saveUsers(list);
+        return { success: true };
+    }
+    getAllUsers() {
+        return this.loadUsers();
     }
 }
-
 module.exports = AuthService;

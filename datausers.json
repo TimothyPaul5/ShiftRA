@@ -1,0 +1,28 @@
+[
+  {
+    "userID": "A001",
+    "name": "Housing Admin",
+    "email": "admin@school.edu",
+    "passwordHash": "admin123",
+    "role": "admin",
+    "active": true
+  },
+  {
+    "userID": "RA001",
+    "name": "Timothy Paul",
+    "email": "timothy@school.edu",
+    "passwordHash": "ra123",
+    "role": "ra",
+    "active": true,
+    "residenceHall": "New Res Hall 3"
+  },
+  {
+    "userID": "RA002",
+    "name": "Levi Williams",
+    "email": "levi@school.edu",
+    "passwordHash": "ra123",
+    "role": "ra",
+    "active": true,
+    "residenceHall": "Chanute"
+  }
+]
