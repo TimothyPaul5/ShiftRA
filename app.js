@@ -63,7 +63,7 @@ async function adminCreateUser() {
     const password = await ask("Password: ");
     const userData = { userID, name, email, passwordHash: password, role };
     if (role === "ra") {
-        userData.residenceHall = await ask("Residence Hall: ");
+        userData.residenceHall = await ask("Residence Hall: (Chanute/New Res Hall 3): ");
     }
     const result = authService.addUser(userData);
     console.log(result.success ? "\nUser created successfully." : `\nError: ${result.message}`);
