@@ -15,6 +15,7 @@ authService.getAllUsers().forEach(u => {
     if (u instanceof RA) scheduleManager.addRA(u);
 });
 
+//comment to test
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
