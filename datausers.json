@@ -24,5 +24,32 @@
     "role": "ra",
     "active": true,
     "residenceHall": "Chanute"
+  },
+  {
+    "userID": "123",
+    "name": "123",
+    "email": "123",
+    "passwordHash": "123",
+    "role": "ra",
+    "active": true,
+    "residenceHall": "Chanute"
+  },
+  {
+    "userID": "321",
+    "name": "321",
+    "email": "321",
+    "passwordHash": "321",
+    "role": "ra",
+    "active": true,
+    "residenceHall": "Chanute"
+  },
+  {
+    "userID": "456",
+    "name": "456",
+    "email": "456",
+    "passwordHash": "456",
+    "role": "ra",
+    "active": true,
+    "residenceHall": "Chanute"
   }
 ]

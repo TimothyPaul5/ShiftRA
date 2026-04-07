@@ -1,1 +1,1093 @@
-{}
+{
+  "New Res Hall 3": {
+    "Monday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Monday",
+        "role": "Primary",
+        "assignedTo": "UNASSIGNED"
+      }
+    ],
+    "Tuesday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "UNASSIGNED"
+      }
+    ],
+    "Wednesday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "UNASSIGNED"
+      }
+    ],
+    "Thursday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Thursday",
+        "role": "Primary",
+        "assignedTo": "UNASSIGNED"
+      }
+    ],
+    "Friday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Friday",
+        "role": "Primary",
+        "assignedTo": "Timothy Paul"
+      },
+      {
+        "hall": "New Res Hall 3",
+        "day": "Friday",
+        "role": "Secondary",
+        "assignedTo": "NO SECONDARY AVAILABLE"
+      }
+    ],
+    "Saturday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Saturday",
+        "role": "Primary",
+        "assignedTo": "UNASSIGNED"
+      },
+      {
+        "hall": "New Res Hall 3",
+        "day": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "NO SECONDARY AVAILABLE"
+      }
+    ],
+    "Sunday": [
+      {
+        "hall": "New Res Hall 3",
+        "day": "Sunday",
+        "role": "Primary",
+        "assignedTo": "UNASSIGNED"
+      }
+    ]
+  },
+  "Chanute": {
+    "2026-06-01": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-01",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-02": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-02",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-03": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-03",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-04": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-04",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-06-05": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-05",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-05",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-06": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-06",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-06",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-06-07": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-07",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-08": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-08",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-06-09": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-09",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-10": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-10",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-11": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-11",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-12": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-12",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-12",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-13": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-13",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-13",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-14": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-14",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-15": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-15",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-06-16": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-16",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-17": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-17",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-18": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-18",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-19": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-19",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-19",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-20": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-20",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-20",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-21": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-21",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-22": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-22",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-06-23": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-23",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-24": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-24",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-25": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-25",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-26": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-26",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-26",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-06-27": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-27",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-06-27",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-06-28": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-28",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-06-29": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-29",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-06-30": [
+      {
+        "hall": "Chanute",
+        "date": "2026-06-30",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-01": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-01",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-02": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-02",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-03": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-03",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-03",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-04": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-04",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-04",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-05": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-05",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-06": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-06",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-07": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-07",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-07-08": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-08",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-09": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-09",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-10": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-10",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-10",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-07-11": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-11",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-11",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-07-12": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-12",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-13": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-13",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-14": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-14",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-07-15": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-15",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-16": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-16",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-17": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-17",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-17",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-18": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-18",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-18",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-19": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-19",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-20": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-20",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-21": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-21",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-07-22": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-22",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-23": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-23",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-24": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-24",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-24",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-25": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-25",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-25",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-26": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-26",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-27": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-27",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-07-28": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-28",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-07-29": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-29",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-07-30": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-30",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-07-31": [
+      {
+        "hall": "Chanute",
+        "date": "2026-07-31",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-07-31",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-01": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-01",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-01",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-02": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-02",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-03": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-03",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-04": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-04",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-08-05": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-05",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-06": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-06",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-07": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-07",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-07",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-08-08": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-08",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-08",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-08-09": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-09",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-10": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-10",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-11": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-11",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-08-12": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-12",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-13": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-13",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-14": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-14",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-14",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-15": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-15",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-15",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-16": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-16",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-17": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-17",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-18": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-18",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-08-19": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-19",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-20": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-20",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-21": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-21",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-21",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-22": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-22",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-22",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-23": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-23",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-24": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-24",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ],
+    "2026-08-25": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-25",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-26": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-26",
+        "dayOfWeek": "Wednesday",
+        "role": "Primary",
+        "assignedTo": "456"
+      }
+    ],
+    "2026-08-27": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-27",
+        "dayOfWeek": "Thursday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-28": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-28",
+        "dayOfWeek": "Friday",
+        "role": "Primary",
+        "assignedTo": "123"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-28",
+        "dayOfWeek": "Friday",
+        "role": "Secondary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-29": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-29",
+        "dayOfWeek": "Saturday",
+        "role": "Primary",
+        "assignedTo": "456"
+      },
+      {
+        "hall": "Chanute",
+        "date": "2026-08-29",
+        "dayOfWeek": "Saturday",
+        "role": "Secondary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-08-30": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-30",
+        "dayOfWeek": "Sunday",
+        "role": "Primary",
+        "assignedTo": "321"
+      }
+    ],
+    "2026-08-31": [
+      {
+        "hall": "Chanute",
+        "date": "2026-08-31",
+        "dayOfWeek": "Monday",
+        "role": "Primary",
+        "assignedTo": "Levi Williams"
+      }
+    ],
+    "2026-09-01": [
+      {
+        "hall": "Chanute",
+        "date": "2026-09-01",
+        "dayOfWeek": "Tuesday",
+        "role": "Primary",
+        "assignedTo": "123"
+      }
+    ]
+  }
+}

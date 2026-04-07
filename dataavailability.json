@@ -1,1 +1,163 @@
-{}
+{
+  "Monday": [
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekday"
+    }
+  ],
+  "Tuesday": [
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekday"
+    }
+  ],
+  "Wednesday": [
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekday"
+    }
+  ],
+  "Thursday": [
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekday"
+    }
+  ],
+  "Friday": [
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "Timothy Paul",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekend"
+    }
+  ],
+  "Saturday": [
+    {
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekend"
+    }
+  ],
+  "Sunday": [
+    {
+      "startTime": "12:40",
+      "endTime": "20:40",
+      "name": "123",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "Levi Williams",
+      "timeZone": "CST",
+      "type": "weekend"
+    },
+    {
+      "name": "321",
+      "timeZone": "CST",
+      "type": "weekday"
+    },
+    {
+      "name": "456",
+      "timeZone": "CST",
+      "type": "weekday"
+    }
+  ]
+}

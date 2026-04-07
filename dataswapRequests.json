@@ -1,0 +1,70 @@
+[
+  {
+    "id": "SWAP-1775525728350",
+    "status": "approved",
+    "fromRA": "321",
+    "toRA": "456",
+    "createdAt": "2026-04-07T01:35:28.350Z",
+    "myShift": {
+      "hallName": "Chanute",
+      "day": "Tuesday",
+      "role": "Primary",
+      "assignedTo": "321",
+      "indexInDay": 0
+    },
+    "targetShift": {
+      "hallName": "Chanute",
+      "day": "Friday",
+      "role": "Primary",
+      "assignedTo": "456",
+      "indexInDay": 0
+    },
+    "respondedAt": "2026-04-07T01:35:52.497Z"
+  },
+  {
+    "id": "SWAP-1775525967891",
+    "status": "pending",
+    "fromRA": "123",
+    "toRA": "456",
+    "residenceHall": "Chanute",
+    "createdAt": "2026-04-07T01:39:27.891Z",
+    "myShift": {
+      "hallName": "Chanute",
+      "day": "Monday",
+      "role": "Primary",
+      "assignedTo": "123",
+      "indexInDay": 0
+    },
+    "targetShift": {
+      "hallName": "Chanute",
+      "day": "Tuesday",
+      "role": "Primary",
+      "assignedTo": "456",
+      "indexInDay": 0
+    }
+  },
+  {
+    "id": "SWAP-1775526290438",
+    "status": "pending",
+    "fromRA": "123",
+    "toRA": "321",
+    "residenceHall": "Chanute",
+    "createdAt": "2026-04-07T01:44:50.439Z",
+    "myShift": {
+      "hallName": "Chanute",
+      "date": "2026-06-01",
+      "dayOfWeek": "Monday",
+      "role": "Primary",
+      "assignedTo": "123",
+      "indexInDate": 0
+    },
+    "targetShift": {
+      "hallName": "Chanute",
+      "date": "2026-06-02",
+      "dayOfWeek": "Tuesday",
+      "role": "Primary",
+      "assignedTo": "321",
+      "indexInDate": 0
+    }
+  }
+]
