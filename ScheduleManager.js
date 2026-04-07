@@ -1,10 +1,23 @@
 const RA = require("./RA");
-const Schedule = require("./Schedule");
 
 class ScheduleManager {
-    constructor() { this.RAs = []; this.schedule = new Schedule(); }
-    addRA(ra) { if (ra instanceof RA) this.RAs.push(ra); }
-    getRAByName(name) { return this.RAs.find(r => r.name === name); }
-    displaySchedule() { return this.schedule.display(); }
+    constructor() {
+        this.RAs = [];
+    }
+
+    addRA(ra) {
+        if (ra instanceof RA) {
+            this.RAs.push(ra);
+        }
+    }
+
+    getRAByName(name) {
+        return this.RAs.find((r) => r.name === name || r.getName() === name);
+    }
+
+    displaySchedule() {
+        return "Schedule display is handled through generated schedule JSON.";
+    }
 }
+
 module.exports = ScheduleManager;
