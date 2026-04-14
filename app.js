@@ -79,34 +79,12 @@ function getAllHalls() {
 
 function getHallByName(name) {
     return getAllHalls().find(
-        (hall) => hall.getName().toLowerCase() === name.toLowerCase()
+        (hall) => hall.getName().toLowerCase() === String(name).toLowerCase()
     );
 }
 
-function syncRAIntoResidenceHall(raUserID, residenceHallName) {
-    const halls = getAllHalls();
-    const hall = halls.find(
-        (h) => h.getName().toLowerCase() === residenceHallName.toLowerCase()
-    );
-
-    if (!hall) {
-        return { success: false, message: "Residence hall not found." };
-    }
-
-    if (!hall.getRAIDs().includes(raUserID)) {
-        const result = hall.addRA(raUserID);
-
-        if (!result.success) {
-            return {
-                success: false,
-                message: result.message || "Could not add RA to residence hall."
-            };
-        }
-
-        hallService.save(halls);
-    }
-
-    return { success: true, hallName: hall.getName() };
+function getHallByID(hallID) {
+    return getAllHalls().find((hall) => hall.getHallID() === hallID) || null;
 }
 
 function readGeneratedSchedule() {
@@ -165,7 +143,7 @@ function buildAdminAssignmentSummary(schedule) {
             summary[hallName] = {};
         }
 
-        for (const [date, shifts] of Object.entries(dates || {})) {
+        for (const shifts of Object.values(dates || {})) {
             for (const shift of shifts || []) {
                 const name = shift.assignedTo;
 
@@ -265,6 +243,10 @@ function getRAByName(name) {
     );
 }
 
+function getRAByUserID(userID) {
+    return authService.getAllUsers().find((u) => u.getUserID() === userID) || null;
+}
+
 function collectAllAssignedShifts() {
     const schedule = readGeneratedSchedule();
     const shifts = [];
@@ -321,19 +303,22 @@ async function promptForHallName() {
     console.log("Available halls:");
     halls.forEach((hall, index) => {
         console.log(
-            `  ${index + 1}. ${hall.getName()} (capacity ${hall.getCapacity()}, assigned ${hall.getRAIDs().length})`
+            `  ${index + 1}. ${hall.getName()} (${hall.getHallID()}) | capacity ${hall.getCapacity()} | assigned ${hall.getRAIDs().length} | weekday ${hall.getWeekdayStaffNeeded()} | weekend ${hall.getWeekendStaffNeeded()}`
         );
     });
 
-    const answer = await ask("Select a hall by number or exact name: ");
+    const answer = await ask("Select a hall by number, hall ID, or exact name: ");
     const numericChoice = Number.parseInt(answer, 10);
 
     if (!Number.isNaN(numericChoice) && numericChoice >= 1 && numericChoice <= halls.length) {
         return halls[numericChoice - 1].getName();
     }
 
-    const hall = getHallByName(answer);
-    return hall ? hall.getName() : null;
+    const byID = halls.find((hall) => hall.getHallID().toLowerCase() === answer.toLowerCase());
+    if (byID) return byID.getName();
+
+    const byName = getHallByName(answer);
+    return byName ? byName.getName() : null;
 }
 
 async function promptForDateRange() {
@@ -407,9 +392,15 @@ async function adminCreateUser() {
     }
 
     if (role === "ra") {
-        const syncResult = syncRAIntoResidenceHall(userID, userData.residenceHall);
-        if (!syncResult.success) {
-            console.log(`\nUser created, but hall assignment failed: ${syncResult.message}`);
+        const hall = getHallByName(userData.residenceHall);
+        if (!hall) {
+            console.log("\nUser created, but hall assignment failed: hall not found.");
+            return;
+        }
+
+        const assignResult = hallService.assignRAToHall(userID, hall.getHallID());
+        if (!assignResult.success) {
+            console.log(`\nUser created, but hall assignment failed: ${assignResult.message}`);
         }
     }
 
@@ -479,10 +470,218 @@ async function adminViewResidenceHalls() {
         console.log(`\n${hall.getName()}`);
         console.log(`  ID: ${hall.getHallID()}`);
         console.log(`  Capacity: ${hall.getCapacity()}`);
+        console.log(`  Weekday staff needed: ${hall.getWeekdayStaffNeeded()}`);
+        console.log(`  Weekend staff needed: ${hall.getWeekendStaffNeeded()}`);
         console.log(
             `  Assigned RAs: ${hall.getRAIDs().length ? hall.getRAIDs().join(", ") : "None"}`
         );
     });
+}
+
+async function adminAddResidenceHall() {
+    console.log("\n--- Add Residence Hall ---");
+
+    const hallID = await ask("Hall ID: ");
+    const name = await ask("Hall name: ");
+    const capacity = Number.parseInt(await ask("Capacity: "), 10);
+    const weekdayStaffNeeded = Number.parseInt(await ask("Weekday staff needed: "), 10) || 1;
+    const weekendStaffNeeded = Number.parseInt(await ask("Weekend staff needed: "), 10) || 1;
+
+    if (!hallID || !name || Number.isNaN(capacity) || capacity < 1) {
+        console.log("Invalid hall input.");
+        return;
+    }
+
+    const result = hallService.createResidenceHall({
+        hallID,
+        name,
+        capacity,
+        weekdayStaffNeeded,
+        weekendStaffNeeded
+    });
+
+    console.log(
+        result.success
+            ? "\nResidence hall created successfully."
+            : `\nError: ${result.message}`
+    );
+}
+
+async function adminEditResidenceHall() {
+    console.log("\n--- Edit Residence Hall ---");
+    const hallName = await promptForHallName();
+
+    if (!hallName) {
+        console.log("Could not find that residence hall.");
+        return;
+    }
+
+    const hall = getHallByName(hallName);
+    if (!hall) {
+        console.log("Residence hall not found.");
+        return;
+    }
+
+    console.log(`\nEditing ${hall.getName()} (${hall.getHallID()})`);
+    console.log(`Current capacity: ${hall.getCapacity()}`);
+    console.log(`Current weekday staff needed: ${hall.getWeekdayStaffNeeded()}`);
+    console.log(`Current weekend staff needed: ${hall.getWeekendStaffNeeded()}`);
+
+    const newName = await ask("New name (leave blank to keep current): ");
+    const capacityInput = await ask("New capacity (leave blank to keep current): ");
+    const weekdayInput = await ask("New weekday staff needed (leave blank to keep current): ");
+    const weekendInput = await ask("New weekend staff needed (leave blank to keep current): ");
+
+    const updates = {};
+
+    if (newName) updates.name = newName;
+    if (capacityInput) {
+        const value = Number.parseInt(capacityInput, 10);
+        if (Number.isNaN(value) || value < 1) {
+            console.log("Invalid capacity.");
+            return;
+        }
+        updates.capacity = value;
+    }
+
+    if (weekdayInput) {
+        const value = Number.parseInt(weekdayInput, 10);
+        if (Number.isNaN(value) || value < 1) {
+            console.log("Invalid weekday staff count.");
+            return;
+        }
+        updates.weekdayStaffNeeded = value;
+    }
+
+    if (weekendInput) {
+        const value = Number.parseInt(weekendInput, 10);
+        if (Number.isNaN(value) || value < 1) {
+            console.log("Invalid weekend staff count.");
+            return;
+        }
+        updates.weekendStaffNeeded = value;
+    }
+
+    const result = hallService.updateResidenceHall(hall.getHallID(), updates);
+
+    console.log(
+        result.success
+            ? "\nResidence hall updated successfully."
+            : `\nError: ${result.message}`
+    );
+}
+
+async function adminDeleteResidenceHall() {
+    console.log("\n--- Delete Residence Hall ---");
+    const hallName = await promptForHallName();
+
+    if (!hallName) {
+        console.log("Could not find that residence hall.");
+        return;
+    }
+
+    const hall = getHallByName(hallName);
+    if (!hall) {
+        console.log("Residence hall not found.");
+        return;
+    }
+
+    const confirm = (await ask(`Type DELETE to remove ${hall.getName()}: `)).trim();
+
+    if (confirm !== "DELETE") {
+        console.log("Delete cancelled.");
+        return;
+    }
+
+    const result = hallService.deleteResidenceHall(hall.getHallID());
+
+    console.log(
+        result.success
+            ? "\nResidence hall deleted successfully."
+            : `\nError: ${result.message}`
+    );
+}
+
+async function adminReassignRAHall() {
+    console.log("\n--- Reassign RA Residence Hall ---");
+
+    const users = authService.getAllUsers().filter(
+        (u) => u.getRole() === "ra" && u.isActive()
+    );
+
+    if (users.length === 0) {
+        console.log("No active RAs found.");
+        return;
+    }
+
+    users.forEach((ra, index) => {
+        console.log(
+            `  ${index + 1}. ${ra.getName()} (${ra.getUserID()}) — Current hall: ${ra.getResidenceHall() || "None"}`
+        );
+    });
+
+    const choice = Number.parseInt(await ask("Select RA number: "), 10);
+    if (Number.isNaN(choice) || choice < 1 || choice > users.length) {
+        console.log("Invalid RA choice.");
+        return;
+    }
+
+    const ra = users[choice - 1];
+    const targetHallName = await promptForHallName();
+
+    if (!targetHallName) {
+        console.log("Could not find target hall.");
+        return;
+    }
+
+    const currentHall = getHallByName(ra.getResidenceHall() || "");
+    const targetHall = getHallByName(targetHallName);
+
+    if (!targetHall) {
+        console.log("Target hall not found.");
+        return;
+    }
+
+    if (currentHall && currentHall.getHallID() === targetHall.getHallID()) {
+        console.log("RA is already assigned to that residence hall.");
+        return;
+    }
+
+    if (currentHall) {
+        const moveResult = hallService.moveRAToHall(
+            ra.getUserID(),
+            currentHall.getHallID(),
+            targetHall.getHallID()
+        );
+
+        if (!moveResult.success) {
+            console.log(`Error: ${moveResult.message}`);
+            return;
+        }
+    } else {
+        const assignResult = hallService.assignRAToHall(
+            ra.getUserID(),
+            targetHall.getHallID()
+        );
+
+        if (!assignResult.success) {
+            console.log(`Error: ${assignResult.message}`);
+            return;
+        }
+    }
+
+    const updateResult = authService.updateRAResidenceHall(
+        ra.getUserID(),
+        targetHall.getName()
+    );
+
+    if (!updateResult.success) {
+        console.log(`Hall moved, but user file update failed: ${updateResult.message}`);
+        return;
+    }
+
+    refreshScheduleManager();
+    console.log(`\n${ra.getName()} moved to ${targetHall.getName()} successfully.`);
 }
 
 async function adminGenerateSchedule() {
@@ -528,12 +727,11 @@ async function adminGenerateSchedule() {
 
     if (mode === "1") {
         const needs = {};
-
         for (const hall of halls) {
-            console.log(`\nHall: ${hall.getName()}`);
-            const weekday = Number.parseInt(await ask("  Weekday staff needed: "), 10) || 1;
-            const weekend = Number.parseInt(await ask("  Weekend staff needed: "), 10) || 1;
-            needs[hall.getName()] = { weekday, weekend };
+            needs[hall.getName()] = {
+                weekday: hall.getWeekdayStaffNeeded(),
+                weekend: hall.getWeekendStaffNeeded()
+            };
         }
 
         const schedule = scheduler.generateSchedule(
@@ -556,12 +754,17 @@ async function adminGenerateSchedule() {
             return;
         }
 
-        console.log(`\nHall: ${hallName}`);
-        const weekday = Number.parseInt(await ask("  Weekday staff needed: "), 10) || 1;
-        const weekend = Number.parseInt(await ask("  Weekend staff needed: "), 10) || 1;
+        const hall = getHallByName(hallName);
+        if (!hall) {
+            console.log("Residence hall not found.");
+            return;
+        }
 
         const singleHallNeeds = {
-            [hallName]: { weekday, weekend }
+            [hallName]: {
+                weekday: hall.getWeekdayStaffNeeded(),
+                weekend: hall.getWeekendStaffNeeded()
+            }
         };
 
         const existingSchedule = readGeneratedSchedule();
@@ -584,12 +787,137 @@ async function adminGenerateSchedule() {
 
 async function adminViewGeneratedSchedule() {
     console.log("\n--- Generated Schedule ---");
-
     const schedule = readGeneratedSchedule();
-
     console.log(formatSchedule(schedule));
     console.log("\n--- Assignment Counts ---");
     console.log(formatAdminAssignmentSummary(schedule));
+}
+
+async function adminManualEditSchedule() {
+    console.log("\n--- Manual Schedule Edit ---");
+
+    const schedule = readGeneratedSchedule();
+
+    if (!schedule || Object.keys(schedule).length === 0) {
+        console.log("No generated schedule found.");
+        return;
+    }
+
+    const hallName = await promptForHallName();
+    if (!hallName || !schedule[hallName]) {
+        console.log("That hall has no schedule generated.");
+        return;
+    }
+
+    const dates = Object.keys(schedule[hallName]).sort();
+    if (dates.length === 0) {
+        console.log("No dates found for that hall.");
+        return;
+    }
+
+    console.log(`\nDates for ${hallName}:`);
+    dates.forEach((date, index) => {
+        console.log(`  ${index + 1}. ${formatDateForDisplay(date)}`);
+    });
+
+    const dateChoice = Number.parseInt(await ask("Select date number: "), 10);
+    if (Number.isNaN(dateChoice) || dateChoice < 1 || dateChoice > dates.length) {
+        console.log("Invalid date choice.");
+        return;
+    }
+
+    const selectedDate = dates[dateChoice - 1];
+    const shifts = schedule[hallName][selectedDate];
+
+    if (!Array.isArray(shifts) || shifts.length === 0) {
+        console.log("No shifts found on that date.");
+        return;
+    }
+
+    console.log(`\nShifts on ${formatDateForDisplay(selectedDate)}:`);
+    shifts.forEach((shift, index) => {
+        console.log(`  ${index + 1}. ${shift.role} -> ${shift.assignedTo}`);
+    });
+
+    const shiftChoice = Number.parseInt(await ask("Select shift number: "), 10);
+    if (Number.isNaN(shiftChoice) || shiftChoice < 1 || shiftChoice > shifts.length) {
+        console.log("Invalid shift choice.");
+        return;
+    }
+
+    const selectedShift = shifts[shiftChoice - 1];
+
+    console.log("\n1. Reassign shift");
+    console.log("2. Clear assignment");
+    const action = await ask("Choose an option: ");
+
+    const scheduler = new SmartScheduler(availDB, hallService, scheduleManager);
+
+    if (action === "1") {
+        const hall = getHallByName(hallName);
+        if (!hall) {
+            console.log("Residence hall not found.");
+            return;
+        }
+
+        const eligibleRAs = getActiveRAUsers().filter(
+            (ra) => ra.getResidenceHall() === hallName
+        );
+
+        if (eligibleRAs.length === 0) {
+            console.log("No active RAs assigned to that hall.");
+            return;
+        }
+
+        console.log("\nEligible RAs:");
+        eligibleRAs.forEach((ra, index) => {
+            console.log(`  ${index + 1}. ${ra.getName()} (${ra.getUserID()})`);
+        });
+
+        const raChoice = Number.parseInt(await ask("Select RA number: "), 10);
+        if (Number.isNaN(raChoice) || raChoice < 1 || raChoice > eligibleRAs.length) {
+            console.log("Invalid RA choice.");
+            return;
+        }
+
+        const newRA = eligibleRAs[raChoice - 1];
+        const result = scheduler.updateAssignment(
+            schedule,
+            hallName,
+            selectedDate,
+            selectedShift.role,
+            newRA.getName()
+        );
+
+        if (!result.success) {
+            console.log(`Error: ${result.message}`);
+            return;
+        }
+
+        writeGeneratedSchedule(schedule);
+        console.log("\nShift reassigned successfully.");
+        return;
+    }
+
+    if (action === "2") {
+        const result = scheduler.removeAssignment(
+            schedule,
+            hallName,
+            selectedDate,
+            selectedShift.role
+        );
+
+        if (!result.success) {
+            console.log(`Error: ${result.message}`);
+            return;
+        }
+
+        writeGeneratedSchedule(schedule);
+        console.log("\nShift cleared successfully.");
+        return;
+    }
+
+    console.log("Invalid option.");
 }
 
 async function adminMenu(user) {
@@ -600,9 +928,14 @@ async function adminMenu(user) {
         console.log("3. Deactivate User");
         console.log("4. Reset User Password");
         console.log("5. View Residence Halls");
-        console.log("6. Generate Schedule");
-        console.log("7. View Generated Schedule");
-        console.log("8. Logout");
+        console.log("6. Add Residence Hall");
+        console.log("7. Edit Residence Hall");
+        console.log("8. Delete Residence Hall");
+        console.log("9. Reassign RA Residence Hall");
+        console.log("10. Generate Schedule");
+        console.log("11. View Generated Schedule");
+        console.log("12. Manually Edit Schedule");
+        console.log("13. Logout");
 
         const choice = await ask("Choose an option: ");
 
@@ -623,16 +956,31 @@ async function adminMenu(user) {
                 await adminViewResidenceHalls();
                 break;
             case "6":
-                await adminGenerateSchedule();
+                await adminAddResidenceHall();
                 break;
             case "7":
-                await adminViewGeneratedSchedule();
+                await adminEditResidenceHall();
                 break;
             case "8":
+                await adminDeleteResidenceHall();
+                break;
+            case "9":
+                await adminReassignRAHall();
+                break;
+            case "10":
+                await adminGenerateSchedule();
+                break;
+            case "11":
+                await adminViewGeneratedSchedule();
+                break;
+            case "12":
+                await adminManualEditSchedule();
+                break;
+            case "13":
                 console.log("\nLogged out.");
                 return;
             default:
-                console.log("\nInvalid option. Choose 1–8.");
+                console.log("\nInvalid option. Choose 1–13.");
         }
     }
 }
@@ -847,6 +1195,8 @@ async function raViewHallInfo(raUser) {
     console.log(`  Hall:     ${hall.getName()}`);
     console.log(`  ID:       ${hall.getHallID()}`);
     console.log(`  Capacity: ${hall.getCapacity()}`);
+    console.log(`  Weekday staff needed: ${hall.getWeekdayStaffNeeded()}`);
+    console.log(`  Weekend staff needed: ${hall.getWeekendStaffNeeded()}`);
     console.log(
         `  RA IDs:   ${hall.getRAIDs().length ? hall.getRAIDs().join(", ") : "None"}`
     );

@@ -28,8 +28,11 @@ class SmartScheduler {
             }
 
             const raIDs = hall.getRAIDs();
-            const weekdayNeed = hallNeeds[hallName]?.weekday || 1;
-            const weekendNeed = hallNeeds[hallName]?.weekend || 1;
+
+            const weekdayNeed =
+                hallNeeds[hallName]?.weekday ?? hall.getWeekdayStaffNeeded() ?? 1;
+            const weekendNeed =
+                hallNeeds[hallName]?.weekend ?? hall.getWeekendStaffNeeded() ?? 1;
 
             this.results[hallName] = this.buildScheduleForHall(
                 hall,
@@ -89,7 +92,14 @@ class SmartScheduler {
         return names[date.getDay()];
     }
 
-    buildScheduleForHall(hall, raIDs, weekdayNeed, weekendNeed, availability, datesInRange) {
+    buildScheduleForHall(
+        hall,
+        raIDs,
+        weekdayNeed,
+        weekendNeed,
+        availability,
+        datesInRange
+    ) {
         const schedule = {};
 
         const ras = this.scheduleMgr.RAs.filter((ra) =>
@@ -105,7 +115,7 @@ class SmartScheduler {
 
             const availableRAs = ras.filter((ra) =>
                 Array.isArray(availability[dayName]) &&
-                availability[dayName].some((a) => a.name === ra.getName())
+                availability[dayName].some((entry) => entry.name === ra.getName())
             );
 
             if (availableRAs.length === 0) {
@@ -160,7 +170,10 @@ class SmartScheduler {
 
             chosen.push(best);
 
-            const index = remaining.findIndex((ra) => ra.getName() === best.getName());
+            const index = remaining.findIndex(
+                (ra) => ra.getName() === best.getName()
+            );
+
             if (index !== -1) {
                 remaining.splice(index, 1);
             }
@@ -171,17 +184,24 @@ class SmartScheduler {
 
     pickBestRAForRole(candidates, role) {
         const sorted = [...candidates].sort((a, b) => {
-            const aStats = this.assignmentStats[a.getName()] || { total: 0, primary: 0, secondary: 0 };
-            const bStats = this.assignmentStats[b.getName()] || { total: 0, primary: 0, secondary: 0 };
+            const aStats = this.assignmentStats[a.getName()] || {
+                total: 0,
+                primary: 0,
+                secondary: 0
+            };
 
-            if (role === "Primary") {
-                if (aStats.primary !== bStats.primary) {
-                    return aStats.primary - bStats.primary;
-                }
-            } else {
-                if (aStats.secondary !== bStats.secondary) {
-                    return aStats.secondary - bStats.secondary;
-                }
+            const bStats = this.assignmentStats[b.getName()] || {
+                total: 0,
+                primary: 0,
+                secondary: 0
+            };
+
+            if (role === "Primary" && aStats.primary !== bStats.primary) {
+                return aStats.primary - bStats.primary;
+            }
+
+            if (role === "Secondary" && aStats.secondary !== bStats.secondary) {
+                return aStats.secondary - bStats.secondary;
             }
 
             if (aStats.total !== bStats.total) {
@@ -212,7 +232,32 @@ class SmartScheduler {
         }
     }
 
-    save(file = path.join(__dirname, "data/generatedSchedule.json")) {
+    updateAssignment(scheduleData, hallName, date, role, newAssignedTo) {
+        if (!scheduleData[hallName]) {
+            return { success: false, message: "Residence hall schedule not found." };
+        }
+
+        if (!scheduleData[hallName][date]) {
+            return { success: false, message: "Date not found in hall schedule." };
+        }
+
+        const shift = scheduleData[hallName][date].find(
+            (item) => item.role === role
+        );
+
+        if (!shift) {
+            return { success: false, message: "Shift role not found on that date." };
+        }
+
+        shift.assignedTo = newAssignedTo;
+        return { success: true, scheduleData };
+    }
+
+    removeAssignment(scheduleData, hallName, date, role) {
+        return this.updateAssignment(scheduleData, hallName, date, role, "UNASSIGNED");
+    }
+
+    save(file = path.join(__dirname, "datageneratedSchedule.json")) {
         fs.writeFileSync(file, JSON.stringify(this.results, null, 2));
     }
 }

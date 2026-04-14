@@ -12,7 +12,17 @@ class ScheduleManager {
     }
 
     getRAByName(name) {
-        return this.RAs.find((r) => r.name === name || r.getName() === name);
+        return this.RAs.find(
+            (ra) => ra.getName() === name || ra.name === name
+        );
+    }
+
+    getRAByID(userID) {
+        return this.RAs.find((ra) => ra.getUserID() === userID);
+    }
+
+    getRAsByHallName(hallName) {
+        return this.RAs.filter((ra) => ra.getResidenceHall() === hallName);
     }
 
     displaySchedule() {
