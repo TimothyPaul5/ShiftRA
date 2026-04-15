@@ -52,14 +52,15 @@ export async function createAppUser(input: {
   }
 
   try {
-    const profile = await createProfile({
-      id: createdAuthUser.user.id,
-      full_name,
-      email,
-      role,
-      residence_hall_id: role === "ra" ? validatedHallId : null,
-      active,
-    });
+  const profile = await createProfile({
+    id: createdAuthUser.user.id,
+    full_name,
+    email,
+    role,
+    residence_hall_id,
+    active: true,
+    must_change_password: true,
+  });
 
     return profile;
   } catch (error) {
