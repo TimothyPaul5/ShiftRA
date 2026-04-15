@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -30,9 +30,6 @@ export default function AcceptInvitePage() {
           throw new Error("This invite link is invalid or missing required information.");
         }
 
-        // Very important:
-        // clear any currently logged-in session first so we do not overwrite
-        // the password of whoever is already signed in.
         await supabase.auth.signOut();
 
         const { error } = await supabase.auth.verifyOtp({
@@ -200,5 +197,21 @@ export default function AcceptInvitePage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            Loading invite...
+          </div>
+        </main>
+      }
+    >
+      <AcceptInviteContent />
+    </Suspense>
   );
 }
