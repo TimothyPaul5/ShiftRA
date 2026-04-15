@@ -3,11 +3,11 @@ import { getAllProfiles } from "@/lib/data/profileRepository";
 import { getAllAvailability } from "@/lib/data/availabilityRepository";
 import {
   createScheduleRecord,
-  deleteAssignmentsForHallInRange,
+  deleteSchedulesByLabel,
   insertScheduleAssignments,
 } from "@/lib/data/scheduleRepository";
 import { getDatesInRange, getWeekdayNumber, isWeekendDay } from "@/lib/core/dates";
-import { Profile, ResidenceHall, ScheduleShift } from "@/lib/types";
+import { Profile, ScheduleShift } from "@/lib/types";
 
 type AssignmentStats = Record<
   string,
@@ -183,9 +183,7 @@ export async function assessScheduleReadiness(params: {
     getAllAvailability(),
   ]);
 
-  const scopedHalls = hallId
-    ? halls.filter((hall) => hall.id === hallId)
-    : halls;
+  const scopedHalls = hallId ? halls.filter((hall) => hall.id === hallId) : halls;
 
   if (scopedHalls.length === 0) {
     throw new Error("No matching residence halls found.");
@@ -225,7 +223,16 @@ export async function assessScheduleReadiness(params: {
   } satisfies ScheduleReadinessReport;
 }
 
+export async function clearScheduleLabel(label: string) {
+  if (!label?.trim()) {
+    throw new Error("Schedule label is required.");
+  }
+
+  await deleteSchedulesByLabel(label.trim());
+}
+
 export async function generateScheduleForHall(params: {
+  label: string;
   hallId: number;
   startDate: string;
   endDate: string;
@@ -234,6 +241,7 @@ export async function generateScheduleForHall(params: {
   minimumRequiredDays?: number;
 }) {
   const {
+    label,
     hallId,
     startDate,
     endDate,
@@ -265,12 +273,11 @@ export async function generateScheduleForHall(params: {
     overrideIncomplete,
   });
 
-  await deleteAssignmentsForHallInRange(hall.id, startDate, endDate);
-
   const stats = initializeStats(hallRAs);
   const dates = getDatesInRange(startDate, endDate);
 
   const scheduleRecord = await createScheduleRecord({
+    label,
     residence_hall_id: hall.id,
     start_date: startDate,
     end_date: endDate,
@@ -319,6 +326,7 @@ export async function generateScheduleForHall(params: {
 }
 
 export async function generateScheduleForAllHalls(params: {
+  label: string;
   startDate: string;
   endDate: string;
   createdBy: string | null;
@@ -326,6 +334,7 @@ export async function generateScheduleForAllHalls(params: {
   minimumRequiredDays?: number;
 }) {
   const {
+    label,
     startDate,
     endDate,
     createdBy,
@@ -338,6 +347,7 @@ export async function generateScheduleForAllHalls(params: {
 
   for (const hall of halls) {
     const generated = await generateScheduleForHall({
+      label,
       hallId: hall.id,
       startDate,
       endDate,

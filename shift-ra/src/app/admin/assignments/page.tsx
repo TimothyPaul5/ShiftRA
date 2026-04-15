@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/getCurrentProfile";
 import { supabase } from "@/lib/supabase";
@@ -96,6 +96,7 @@ export default function AdminAssignmentsPage() {
       }
 
       await loadData();
+      setMessage("RA assignment updated.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to update hall assignment.");
     }
@@ -103,68 +104,113 @@ export default function AdminAssignmentsPage() {
     setSavingId(null);
   }
 
+  const summary = useMemo(() => {
+    return halls.map((hall) => ({
+      ...hall,
+      assigned: getAssignedCount(hall.id),
+    }));
+  }, [halls, profiles]);
+
   return (
-    <main className="min-h-screen p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">RA Hall Assignments</h1>
-          <p className="mt-2">Move RAs between residence halls or remove assignments.</p>
-        </div>
-
-        <button onClick={() => router.push("/admin")} className="rounded-md border px-4 py-2">
-          Back to Admin
-        </button>
-      </div>
-
-      {message ? (
-        <div className="mb-6 rounded-md border border-red-400 bg-red-50 p-3 text-red-700">
-          {message}
-        </div>
-      ) : null}
-
-      <section className="rounded-xl border p-6">
-        <h2 className="text-2xl font-semibold mb-4">Current RA Assignments</h2>
-
-        {loading ? (
-          <p>Loading RA assignments...</p>
-        ) : profiles.length === 0 ? (
-          <p>No RAs found.</p>
-        ) : (
-          <div className="space-y-4">
-            {profiles.map((profile) => (
-              <div
-                key={profile.id}
-                className="rounded-lg border p-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  <h3 className="text-xl font-semibold">{profile.full_name}</h3>
-                  <p>{profile.email}</p>
-                  <p>Status: {profile.active ? "Active" : "Inactive"}</p>
-                  <p>Current Hall: {getHallName(profile.residence_hall_id)}</p>
-                </div>
-
-                <div className="flex flex-col gap-2 md:min-w-[320px]">
-                  <label className="text-sm font-medium">Assign Residence Hall</label>
-                  <select
-                    className="rounded-md border px-3 py-2"
-                    value={profile.residence_hall_id ?? ""}
-                    onChange={(e) => updateRAHall(profile.id, e.target.value)}
-                    disabled={savingId === profile.id}
-                  >
-                    <option value="">Unassigned</option>
-                    {halls.map((hall) => (
-                      <option key={hall.id} value={hall.id}>
-                        {hall.name} (capacity {hall.capacity}, assigned {getAssignedCount(hall.id)})
-                      </option>
-                    ))}
-                  </select>
-
-                  {savingId === profile.id ? <p className="text-sm text-gray-600">Saving...</p> : null}
-                </div>
+    <main className="min-h-screen bg-slate-50">
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
+        <div className="relative mx-auto max-w-7xl px-6 py-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="mb-3 inline-flex rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-sm text-yellow-200">
+                RA Placement
               </div>
-            ))}
+              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">RA Assignments</h1>
+              <p className="mt-3 max-w-2xl text-blue-100">
+                Move RAs between halls, unassign them when needed, and review hall capacity at a glance.
+              </p>
+            </div>
+
+            <button
+              onClick={() => router.push("/admin")}
+              className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950 transition hover:brightness-95"
+            >
+              Back to Admin
+            </button>
           </div>
-        )}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        {message ? (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-slate-700 shadow-sm">
+            {message}
+          </div>
+        ) : null}
+
+        <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {summary.map((hall) => (
+            <div key={hall.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-2 inline-flex rounded-lg bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+                {hall.name}
+              </div>
+              <div className="space-y-1 text-sm text-slate-700">
+                <p>Capacity: {hall.capacity}</p>
+                <p>Assigned: {hall.assigned}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-slate-900">Current RA Assignments</h2>
+            <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+          </div>
+
+          {loading ? (
+            <p className="text-slate-600">Loading RA assignments...</p>
+          ) : profiles.length === 0 ? (
+            <p className="text-slate-600">No RAs found.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {profiles.map((profile) => (
+                <div
+                  key={profile.id}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                >
+                  <div className="mb-2 inline-flex rounded-lg bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+                    RA
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">{profile.full_name}</h3>
+                  <p className="mt-2 text-sm text-slate-600">{profile.email}</p>
+                  <p className="mt-3 text-sm text-slate-700">
+                    Current Hall: {getHallName(profile.residence_hall_id)}
+                  </p>
+
+                  <div className="mt-4">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Assign Residence Hall
+                    </label>
+                    <select
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      value={profile.residence_hall_id ?? ""}
+                      onChange={(e) => updateRAHall(profile.id, e.target.value)}
+                      disabled={savingId === profile.id}
+                    >
+                      <option value="">Unassigned</option>
+                      {halls.map((hall) => (
+                        <option key={hall.id} value={hall.id}>
+                          {hall.name} (capacity {hall.capacity}, assigned {getAssignedCount(hall.id)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {savingId === profile.id ? (
+                    <p className="mt-3 text-sm font-medium text-blue-800">Saving...</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </section>
     </main>
   );

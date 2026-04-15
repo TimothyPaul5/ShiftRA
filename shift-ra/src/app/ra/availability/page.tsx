@@ -166,96 +166,133 @@ export default function RAAvailabilityPage() {
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">My Availability</h1>
-          <p className="mt-2">Select one or more weekly days you are available.</p>
+    <main className="min-h-screen bg-slate-50">
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
+        <div className="relative mx-auto max-w-7xl px-6 py-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="mb-3 inline-flex rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-sm text-yellow-200">
+                Weekly Availability
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">My Availability</h1>
+              <p className="mt-3 max-w-2xl text-blue-100">
+                Select the weekly days you are available so schedules can be generated more accurately and fairly.
+              </p>
+            </div>
+
+            <button
+              onClick={() => router.push("/ra")}
+              className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950 transition hover:brightness-95"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={() => router.push("/ra")}
-          className="rounded-md border px-4 py-2"
-        >
-          Back to RA Dashboard
-        </button>
-      </div>
-
-      {message ? <div className="mb-6 rounded-md border p-3">{message}</div> : null}
-
-      <section className="mb-8 rounded-xl border p-6">
-        <h2 className="text-2xl font-semibold mb-4">Choose Days</h2>
-
-        {loading ? (
-          <p>Loading availability...</p>
-        ) : (
-          <>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {DAYS.map((day) => {
-                const checked = selectedDays.includes(day.value);
-                const alreadySaved = savedDaySet.has(day.value);
-
-                return (
-                  <label
-                    key={day.value}
-                    className="flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer"
-                  >
-                    <span>{day.label}</span>
-                    <div className="flex items-center gap-3">
-                      {alreadySaved ? (
-                        <span className="text-xs border rounded px-2 py-1">Saved</span>
-                      ) : null}
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleDay(day.value)}
-                      />
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={saveSelectedDays}
-                disabled={saving}
-                className="rounded-md border px-4 py-2"
-              >
-                {saving ? "Saving..." : "Save Selected Days"}
-              </button>
-
-              <button
-                onClick={removeSelectedDays}
-                disabled={saving}
-                className="rounded-md border px-4 py-2"
-              >
-                {saving ? "Removing..." : "Remove Selected Saved Days"}
-              </button>
-            </div>
-          </>
-        )}
       </section>
 
-      <section className="rounded-xl border p-6">
-        <h2 className="text-2xl font-semibold mb-4">Currently Saved Availability</h2>
-
-        {loading ? (
-          <p>Loading...</p>
-        ) : savedAvailability.length === 0 ? (
-          <p>No availability saved yet.</p>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {savedAvailability.map((row) => {
-              const day = DAYS.find((d) => d.value === row.day_of_week);
-              return (
-                <div key={row.id} className="rounded-full border px-4 py-2">
-                  {day?.label || `Day ${row.day_of_week}`}
-                </div>
-              );
-            })}
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        {message ? (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-slate-700 shadow-sm">
+            {message}
           </div>
-        )}
+        ) : null}
+
+        <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Choose Days</h2>
+              <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+            </div>
+
+            {loading ? (
+              <p className="text-slate-600">Loading availability...</p>
+            ) : (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {DAYS.map((day) => {
+                    const checked = selectedDays.includes(day.value);
+                    const alreadySaved = savedDaySet.has(day.value);
+
+                    return (
+                      <label
+                        key={day.value}
+                        className={`cursor-pointer rounded-2xl border p-5 transition ${
+                          checked
+                            ? "border-blue-300 bg-blue-50"
+                            : "border-slate-200 bg-slate-50 hover:border-blue-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <div className="text-lg font-bold text-slate-900">{day.label}</div>
+                            {alreadySaved ? (
+                              <div className="mt-2 inline-flex rounded-lg bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
+                                Saved
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleDay(day.value)}
+                            className="h-5 w-5"
+                          />
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    onClick={saveSelectedDays}
+                    disabled={saving}
+                    className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+                  >
+                    {saving ? "Saving..." : "Save Selected Days"}
+                  </button>
+
+                  <button
+                    onClick={removeSelectedDays}
+                    disabled={saving}
+                    className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+                  >
+                    {saving ? "Removing..." : "Remove Selected Saved Days"}
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Saved Availability</h2>
+              <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+            </div>
+
+            {loading ? (
+              <p className="text-slate-600">Loading...</p>
+            ) : savedAvailability.length === 0 ? (
+              <p className="text-slate-600">No availability saved yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {savedAvailability.map((row) => {
+                  const day = DAYS.find((d) => d.value === row.day_of_week);
+                  return (
+                    <div
+                      key={row.id}
+                      className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 font-medium text-blue-900"
+                    >
+                      {day?.label || `Day ${row.day_of_week}`}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
       </section>
     </main>
   );

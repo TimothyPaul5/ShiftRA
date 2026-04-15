@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getProfileById } from "@/lib/data/profileRepository";
 import {
   assessScheduleReadiness,
+  clearScheduleLabel,
   generateScheduleForAllHalls,
   generateScheduleForHall,
 } from "@/lib/core/scheduler";
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
+      label,
       startDate,
       endDate,
       hallId,
@@ -68,9 +70,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (!startDate || !endDate) {
+    if (action === "clear") {
+      if (!label) {
+        return NextResponse.json({ error: "Schedule label is required." }, { status: 400 });
+      }
+
+      await clearScheduleLabel(String(label));
+
+      return NextResponse.json({
+        success: true,
+        action: "clear",
+      });
+    }
+
+    if (!label || !startDate || !endDate) {
       return NextResponse.json(
-        { error: "Start date and end date are required." },
+        { error: "Label, start date, and end date are required." },
         { status: 400 }
       );
     }
@@ -91,6 +106,7 @@ export async function POST(req: NextRequest) {
       }
 
       const result = await generateScheduleForHall({
+        label: String(label),
         hallId: Number(hallId),
         startDate,
         endDate,
@@ -108,6 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     const results = await generateScheduleForAllHalls({
+      label: String(label),
       startDate,
       endDate,
       createdBy: callerUser.id,

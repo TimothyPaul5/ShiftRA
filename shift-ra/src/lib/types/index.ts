@@ -4,10 +4,10 @@ export type Profile = {
   id: string;
   full_name: string;
   email: string;
-  role: UserRole;
+  role: "admin" | "ra";
   residence_hall_id: number | null;
   active: boolean;
-  created_at?: string;
+  must_change_password: boolean;
 };
 
 export type ResidenceHall = {
@@ -22,13 +22,14 @@ export type ResidenceHall = {
 export type AvailabilityRow = {
   id: number;
   ra_id: string;
-  day_of_week: number; // 1=Mon ... 7=Sun
+  day_of_week: number;
   is_available: boolean;
   created_at?: string;
 };
 
 export type ScheduleRecord = {
   id: number;
+  label: string;
   residence_hall_id: number;
   start_date: string;
   end_date: string;

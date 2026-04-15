@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { ScheduleRecord, ScheduleShift } from "@/lib/types";
 
 export async function createScheduleRecord(input: {
+  label: string;
   residence_hall_id: number;
   start_date: string;
   end_date: string;
@@ -15,6 +16,49 @@ export async function createScheduleRecord(input: {
 
   if (error) throw new Error(error.message);
   return data as ScheduleRecord;
+}
+
+export async function getSchedulesByLabel(label: string) {
+  const { data, error } = await supabaseAdmin
+    .from("schedules")
+    .select("*")
+    .eq("label", label)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data || []) as ScheduleRecord[];
+}
+
+export async function getDistinctScheduleLabels() {
+  const { data, error } = await supabaseAdmin
+    .from("schedules")
+    .select("label")
+    .order("label", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return [...new Set((data || []).map((row) => row.label))];
+}
+
+export async function deleteSchedulesByLabel(label: string) {
+  const schedules = await getSchedulesByLabel(label);
+  const ids = schedules.map((s) => s.id);
+
+  if (ids.length > 0) {
+    const { error: assignmentError } = await supabaseAdmin
+      .from("schedule_assignments")
+      .delete()
+      .in("schedule_id", ids);
+
+    if (assignmentError) throw new Error(assignmentError.message);
+  }
+
+  const { error } = await supabaseAdmin
+    .from("schedules")
+    .delete()
+    .eq("label", label);
+
+  if (error) throw new Error(error.message);
 }
 
 export async function insertScheduleAssignments(rows: Omit<ScheduleShift, "id" | "created_at">[]) {
@@ -52,6 +96,23 @@ export async function getAssignmentsForDateRange(startDate: string, endDate: str
   return (data || []) as ScheduleShift[];
 }
 
+export async function getAssignmentsForDate(date: string, hallId?: number | null) {
+  let query = supabaseAdmin
+    .from("schedule_assignments")
+    .select("*")
+    .eq("assignment_date", date)
+    .order("role", { ascending: true });
+
+  if (hallId) {
+    query = query.eq("residence_hall_id", hallId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return (data || []) as ScheduleShift[];
+}
+
 export async function getAssignmentById(id: number) {
   const { data, error } = await supabaseAdmin
     .from("schedule_assignments")
@@ -71,6 +132,17 @@ export async function updateAssignment(
     .from("schedule_assignments")
     .update(updates)
     .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as ScheduleShift;
+}
+
+export async function createManualAssignment(input: Omit<ScheduleShift, "id" | "created_at">) {
+  const { data, error } = await supabaseAdmin
+    .from("schedule_assignments")
+    .insert(input)
     .select()
     .single();
 

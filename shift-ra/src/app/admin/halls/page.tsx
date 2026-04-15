@@ -107,6 +107,7 @@ export default function AdminHallsPage() {
       setNewWeekdayStaff("1");
       setNewWeekendStaff("1");
       await loadData();
+      setMessage("Residence hall added.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to add hall.");
     }
@@ -162,6 +163,7 @@ export default function AdminHallsPage() {
 
       cancelEdit();
       await loadData();
+      setMessage("Residence hall updated.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to update hall.");
     }
@@ -194,181 +196,222 @@ export default function AdminHallsPage() {
       }
 
       await loadData();
+      setMessage("Residence hall deleted.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to delete hall.");
     }
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">Manage Residence Halls</h1>
-          <p className="mt-2">Add, edit, and remove halls and staffing settings.</p>
-        </div>
+    <main className="min-h-screen bg-slate-50">
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
+        <div className="relative mx-auto max-w-7xl px-6 py-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="mb-3 inline-flex rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-sm text-yellow-200">
+                Residence Hall Operations
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Manage Residence Halls</h1>
+              <p className="mt-3 max-w-2xl text-blue-100">
+                Add, edit, and remove halls while managing capacity and staffing requirements.
+              </p>
+            </div>
 
-        <button onClick={() => router.push("/admin")} className="rounded-md border px-4 py-2">
-          Back to Admin
-        </button>
-      </div>
-
-      {message ? (
-        <div className="mb-6 rounded-md border border-red-400 bg-red-50 p-3 text-red-700">
-          {message}
-        </div>
-      ) : null}
-
-      <section className="mb-10 rounded-xl border p-6">
-        <h2 className="text-2xl font-semibold mb-4">Add Residence Hall</h2>
-
-        <form onSubmit={handleAddHall} className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="block mb-1 text-sm font-medium">Hall Name</label>
-            <input
-              className="w-full rounded-md border px-3 py-2"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="New Res Hall 3"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-medium">Capacity</label>
-            <input
-              type="number"
-              min="1"
-              className="w-full rounded-md border px-3 py-2"
-              value={newCapacity}
-              onChange={(e) => setNewCapacity(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-medium">Weekday Staff Needed</label>
-            <input
-              type="number"
-              min="1"
-              className="w-full rounded-md border px-3 py-2"
-              value={newWeekdayStaff}
-              onChange={(e) => setNewWeekdayStaff(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 text-sm font-medium">Weekend Staff Needed</label>
-            <input
-              type="number"
-              min="1"
-              className="w-full rounded-md border px-3 py-2"
-              value={newWeekendStaff}
-              onChange={(e) => setNewWeekendStaff(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <button type="submit" className="rounded-md border px-4 py-2 font-medium">
-              Add Hall
+            <button
+              onClick={() => router.push("/admin")}
+              className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950 transition hover:brightness-95"
+            >
+              Back to Admin
             </button>
           </div>
-        </form>
+        </div>
       </section>
 
-      <section className="rounded-xl border p-6">
-        <h2 className="text-2xl font-semibold mb-4">Current Residence Halls</h2>
-
-        {loading ? (
-          <p>Loading halls...</p>
-        ) : halls.length === 0 ? (
-          <p>No residence halls found.</p>
-        ) : (
-          <div className="space-y-4">
-            {halls.map((hall) => {
-              const assignedCount = getAssignedCount(hall.id);
-
-              return (
-                <div key={hall.id} className="rounded-lg border p-4">
-                  {editingId === hall.id ? (
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="block mb-1 text-sm font-medium">Hall Name</label>
-                        <input
-                          className="w-full rounded-md border px-3 py-2"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block mb-1 text-sm font-medium">Capacity</label>
-                        <input
-                          type="number"
-                          min="1"
-                          className="w-full rounded-md border px-3 py-2"
-                          value={editCapacity}
-                          onChange={(e) => setEditCapacity(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block mb-1 text-sm font-medium">Weekday Staff Needed</label>
-                        <input
-                          type="number"
-                          min="1"
-                          className="w-full rounded-md border px-3 py-2"
-                          value={editWeekdayStaff}
-                          onChange={(e) => setEditWeekdayStaff(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block mb-1 text-sm font-medium">Weekend Staff Needed</label>
-                        <input
-                          type="number"
-                          min="1"
-                          className="w-full rounded-md border px-3 py-2"
-                          value={editWeekendStaff}
-                          onChange={(e) => setEditWeekendStaff(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="md:col-span-2 flex gap-3">
-                        <button onClick={() => saveEdit(hall.id)} className="rounded-md border px-4 py-2">
-                          Save
-                        </button>
-                        <button onClick={cancelEdit} className="rounded-md border px-4 py-2">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold">{hall.name}</h3>
-                        <p>Capacity: {hall.capacity}</p>
-                        <p>Assigned RAs: {assignedCount}</p>
-                        <p>Weekday Staff Needed: {hall.weekday_staff_needed}</p>
-                        <p>Weekend Staff Needed: {hall.weekend_staff_needed}</p>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button onClick={() => startEdit(hall)} className="rounded-md border px-4 py-2">
-                          Edit
-                        </button>
-                        <button onClick={() => deleteHallById(hall.id, hall.name)} className="rounded-md border px-4 py-2">
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        {message ? (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-slate-700 shadow-sm">
+            {message}
           </div>
-        )}
+        ) : null}
+
+        <div className="grid gap-8 xl:grid-cols-[420px_1fr]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Add Residence Hall</h2>
+              <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+            </div>
+
+            <form onSubmit={handleAddHall} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Hall Name</label>
+                <input
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="New Hall"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Capacity</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  value={newCapacity}
+                  onChange={(e) => setNewCapacity(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Weekday Staff Needed</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  value={newWeekdayStaff}
+                  onChange={(e) => setNewWeekdayStaff(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Weekend Staff Needed</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  value={newWeekendStaff}
+                  onChange={(e) => setNewWeekendStaff(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950 transition hover:brightness-95"
+              >
+                Add Hall
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Current Residence Halls</h2>
+              <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+            </div>
+
+            {loading ? (
+              <p className="text-slate-600">Loading halls...</p>
+            ) : halls.length === 0 ? (
+              <p className="text-slate-600">No residence halls found.</p>
+            ) : (
+              <div className="space-y-4">
+                {halls.map((hall) => {
+                  const assignedCount = getAssignedCount(hall.id);
+
+                  return (
+                    <div key={hall.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                      {editingId === hall.id ? (
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Hall Name</label>
+                            <input
+                              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Capacity</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                              value={editCapacity}
+                              onChange={(e) => setEditCapacity(e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Weekday Staff Needed</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                              value={editWeekdayStaff}
+                              onChange={(e) => setEditWeekdayStaff(e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Weekend Staff Needed</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                              value={editWeekendStaff}
+                              onChange={(e) => setEditWeekendStaff(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="md:col-span-2 flex gap-3">
+                            <button
+                              onClick={() => saveEdit(hall.id)}
+                              className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <div className="mb-2 inline-flex rounded-lg bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+                              {hall.name}
+                            </div>
+                            <div className="space-y-1 text-sm text-slate-700">
+                              <p>Capacity: {hall.capacity}</p>
+                              <p>Assigned RAs: {assignedCount}</p>
+                              <p>Weekday Staff Needed: {hall.weekday_staff_needed}</p>
+                              <p>Weekend Staff Needed: {hall.weekend_staff_needed}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => startEdit(hall)}
+                              className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteHallById(hall.id, hall.name)}
+                              className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
       </section>
     </main>
   );
