@@ -19,7 +19,7 @@ export type ResidenceHall = {
   created_at?: string;
 };
 
-export type AvailabilityRow = {
+export type AvailabilityRow = { //test
   id: number;
   ra_id: string;
   day_of_week: number;
