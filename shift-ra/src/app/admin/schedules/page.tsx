@@ -141,7 +141,14 @@ export default function AdminSchedulesPage() {
   const [showReadinessModal, setShowReadinessModal] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [showFairnessModal, setShowFairnessModal] = useState(false);
+
   const [availabilityHallFilter, setAvailabilityHallFilter] = useState("all");
+
+  const [fairnessLabelFilter, setFairnessLabelFilter] = useState("");
+  const [fairnessHallFilter, setFairnessHallFilter] = useState("all");
+  const [fairnessAssignments, setFairnessAssignments] = useState<AssignmentRow[]>([]);
+  const [loadingFairness, setLoadingFairness] = useState(false);
+
   const [errorModal, setErrorModal] = useState<ErrorModalState | null>(null);
 
   useEffect(() => {
@@ -240,11 +247,52 @@ export default function AdminSchedulesPage() {
     setAssignments(rows);
   }
 
+  async function loadFairnessAssignments(labelFilter: string) {
+    if (!labelFilter) {
+      setFairnessAssignments([]);
+      return;
+    }
+
+    setLoadingFairness(true);
+
+    const matchingScheduleIds = schedules
+      .filter((schedule) => schedule.label === labelFilter)
+      .map((schedule) => schedule.id);
+
+    if (matchingScheduleIds.length === 0) {
+      setFairnessAssignments([]);
+      setLoadingFairness(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("schedule_assignments")
+      .select("*")
+      .in("schedule_id", matchingScheduleIds)
+      .order("assignment_date", { ascending: true });
+
+    if (error) {
+      setErrorModal({
+        title: "Failed to Load Fairness Data",
+        description: error.message,
+      });
+      setLoadingFairness(false);
+      return;
+    }
+
+    setFairnessAssignments((data || []) as AssignmentRow[]);
+    setLoadingFairness(false);
+  }
+
   useEffect(() => {
     if (!loading) {
       loadCalendarData(calendarYear, calendarMonth, selectedLabel);
     }
   }, [calendarYear, calendarMonth, selectedLabel, schedules, loading]);
+
+  useEffect(() => {
+    loadFairnessAssignments(fairnessLabelFilter);
+  }, [fairnessLabelFilter, schedules]);
 
   function getHallName(hallIdValue: number) {
     return halls.find((hall) => hall.id === hallIdValue)?.name || "Unknown Hall";
@@ -282,9 +330,16 @@ export default function AdminSchedulesPage() {
   }, [filteredAssignments, profiles, halls]);
 
   const fairnessSummary = useMemo(() => {
+    const source = fairnessAssignments.filter((row) => {
+      if (fairnessHallFilter !== "all" && row.residence_hall_id !== Number(fairnessHallFilter)) {
+        return false;
+      }
+      return true;
+    });
+
     const map = new Map<string, { name: string; total: number; primary: number; secondary: number }>();
 
-    for (const row of filteredAssignments) {
+    for (const row of source) {
       if (!row.assigned_ra_id) continue;
 
       const current = map.get(row.assigned_ra_id) || {
@@ -305,7 +360,7 @@ export default function AdminSchedulesPage() {
       if (a.total !== b.total) return b.total - a.total;
       return a.name.localeCompare(b.name);
     });
-  }, [filteredAssignments, profiles]);
+  }, [fairnessAssignments, fairnessHallFilter, profiles]);
 
   const selectedDayAssignments = useMemo(() => {
     if (!selectedDate) return [];
@@ -1134,9 +1189,7 @@ export default function AdminSchedulesPage() {
               </div>
 
               <div>
-                <h3 className="mb-3 text-lg font-semibold text-slate-900">
-                  Below Hall Minimum
-                </h3>
+                <h3 className="mb-3 text-lg font-semibold text-slate-900">Below Hall Minimum</h3>
                 {readinessReport.belowMinimumAvailability.length === 0 ? (
                   <p className="text-slate-600">None.</p>
                 ) : (
@@ -1225,7 +1278,7 @@ export default function AdminSchedulesPage() {
                 <div className="mb-3 inline-flex rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm text-yellow-700">
                   Fairness Summary
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900">Current View Shift Breakdown</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Shift Breakdown by Term and Hall</h2>
               </div>
 
               <button
@@ -1236,8 +1289,46 @@ export default function AdminSchedulesPage() {
               </button>
             </div>
 
-            {fairnessSummary.length === 0 ? (
-              <p className="text-slate-600">No assigned shifts in the current view.</p>
+            <div className="mb-6 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Term</label>
+                <select
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                  value={fairnessLabelFilter}
+                  onChange={(e) => setFairnessLabelFilter(e.target.value)}
+                >
+                  <option value="">Select a term</option>
+                  {scheduleLabels.map((scheduleLabel) => (
+                    <option key={scheduleLabel} value={scheduleLabel}>
+                      {scheduleLabel}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Residence Hall</label>
+                <select
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                  value={fairnessHallFilter}
+                  onChange={(e) => setFairnessHallFilter(e.target.value)}
+                >
+                  <option value="all">All Residence Halls</option>
+                  {halls.map((hall) => (
+                    <option key={hall.id} value={String(hall.id)}>
+                      {hall.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {!fairnessLabelFilter ? (
+              <p className="text-slate-600">Select a term to view fairness.</p>
+            ) : loadingFairness ? (
+              <p className="text-slate-600">Loading fairness data...</p>
+            ) : fairnessSummary.length === 0 ? (
+              <p className="text-slate-600">No assigned shifts found for this filter.</p>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {fairnessSummary.map((item) => (
