@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getProfileById, getAllProfiles } from "@/lib/data/profileRepository";
-import { updateHall } from "@/lib/data/hallRepository";
-import { validateHallCapacityUpdate } from "@/lib/core/halls";
+import { getProfileById } from "@/lib/data/profileRepository";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -42,27 +41,87 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, name, capacity, weekday_staff_needed, weekend_staff_needed } = body;
 
-    if (!id || !name) {
-      return NextResponse.json({ error: "Hall ID and name are required." }, { status: 400 });
+    const {
+      id,
+      name,
+      capacity,
+      weekday_staff_needed,
+      weekend_staff_needed,
+      minimum_required_availability_days,
+    } = body as {
+      id?: number;
+      name?: string;
+      capacity?: number;
+      weekday_staff_needed?: number;
+      weekend_staff_needed?: number;
+      minimum_required_availability_days?: number;
+    };
+
+    if (!id) {
+      return NextResponse.json({ error: "Hall ID is required." }, { status: 400 });
     }
 
-    const profiles = await getAllProfiles();
-    const capacityValidation = validateHallCapacityUpdate(Number(id), Number(capacity), profiles);
-
-    if (!capacityValidation.ok) {
-      return NextResponse.json({ error: capacityValidation.error }, { status: 400 });
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: "Hall name is required." }, { status: 400 });
     }
 
-    const updated = await updateHall(Number(id), {
-      name: String(name).trim(),
-      capacity: Number(capacity),
-      weekday_staff_needed: Number(weekday_staff_needed),
-      weekend_staff_needed: Number(weekend_staff_needed),
-    });
+    if (
+      capacity === undefined ||
+      weekday_staff_needed === undefined ||
+      weekend_staff_needed === undefined ||
+      minimum_required_availability_days === undefined
+    ) {
+      return NextResponse.json(
+        { error: "All hall fields are required." },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ success: true, hall: updated });
+    if (Number(capacity) < 1) {
+      return NextResponse.json({ error: "Capacity must be at least 1." }, { status: 400 });
+    }
+
+    if (Number(weekday_staff_needed) < 1) {
+      return NextResponse.json(
+        { error: "Weekday staff needed must be at least 1." },
+        { status: 400 }
+      );
+    }
+
+    if (Number(weekend_staff_needed) < 1) {
+      return NextResponse.json(
+        { error: "Weekend staff needed must be at least 1." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      Number(minimum_required_availability_days) < 0 ||
+      Number(minimum_required_availability_days) > 7
+    ) {
+      return NextResponse.json(
+        { error: "Minimum required availability days must be between 0 and 7." },
+        { status: 400 }
+      );
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("residence_halls")
+      .update({
+        name: name.trim(),
+        capacity: Number(capacity),
+        weekday_staff_needed: Number(weekday_staff_needed),
+        weekend_staff_needed: Number(weekend_staff_needed),
+        minimum_required_availability_days: Number(minimum_required_availability_days),
+      })
+      .eq("id", id);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unexpected error." },

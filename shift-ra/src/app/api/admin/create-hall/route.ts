@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getProfileById, getAllProfiles } from "@/lib/data/profileRepository";
-import { deleteHall } from "@/lib/data/hallRepository";
-import { validateHallDeletion } from "@/lib/core/halls";
+import { getProfileById } from "@/lib/data/profileRepository";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export async function DELETE(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
 
@@ -41,21 +40,77 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Admin access required." }, { status: 403 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const id = Number(searchParams.get("id"));
+    const body = await req.json();
 
-    if (!id) {
-      return NextResponse.json({ error: "Hall ID is required." }, { status: 400 });
+    const {
+      name,
+      capacity,
+      weekday_staff_needed,
+      weekend_staff_needed,
+      minimum_required_availability_days,
+    } = body as {
+      name?: string;
+      capacity?: number;
+      weekday_staff_needed?: number;
+      weekend_staff_needed?: number;
+      minimum_required_availability_days?: number;
+    };
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: "Hall name is required." }, { status: 400 });
     }
 
-    const profiles = await getAllProfiles();
-    const validation = validateHallDeletion(id, profiles);
-
-    if (!validation.ok) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
+    if (
+      capacity === undefined ||
+      weekday_staff_needed === undefined ||
+      weekend_staff_needed === undefined ||
+      minimum_required_availability_days === undefined
+    ) {
+      return NextResponse.json(
+        { error: "All hall fields are required." },
+        { status: 400 }
+      );
     }
 
-    await deleteHall(id);
+    if (Number(capacity) < 1) {
+      return NextResponse.json({ error: "Capacity must be at least 1." }, { status: 400 });
+    }
+
+    if (Number(weekday_staff_needed) < 1) {
+      return NextResponse.json(
+        { error: "Weekday staff needed must be at least 1." },
+        { status: 400 }
+      );
+    }
+
+    if (Number(weekend_staff_needed) < 1) {
+      return NextResponse.json(
+        { error: "Weekend staff needed must be at least 1." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      Number(minimum_required_availability_days) < 0 ||
+      Number(minimum_required_availability_days) > 7
+    ) {
+      return NextResponse.json(
+        { error: "Minimum required availability days must be between 0 and 7." },
+        { status: 400 }
+      );
+    }
+
+    const { error: insertError } = await supabaseAdmin.from("residence_halls").insert({
+      name: name.trim(),
+      capacity: Number(capacity),
+      weekday_staff_needed: Number(weekday_staff_needed),
+      weekend_staff_needed: Number(weekend_staff_needed),
+      minimum_required_availability_days: Number(minimum_required_availability_days),
+    });
+
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 400 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
