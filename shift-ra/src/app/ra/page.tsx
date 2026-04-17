@@ -4,10 +4,46 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+type AssignmentRow = {
+  id: number;
+  assignment_date: string;
+  role: "Primary" | "Secondary";
+  residence_hall_id: number;
+};
+
+function formatShortShift(dateString: string, role: "Primary" | "Secondary") {
+  const date = new Date(`${dateString}T00:00:00`);
+  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+  return `${weekday} — ${role}`;
+}
+
+function getStartOfWeek(date: Date) {
+  const copy = new Date(date);
+  const day = copy.getDay();
+  copy.setDate(copy.getDate() - day);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function getEndOfWeek(date: Date) {
+  const copy = getStartOfWeek(date);
+  copy.setDate(copy.getDate() + 6);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+}
+
+function toDateOnlyString(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
 export default function RAPage() {
   const router = useRouter();
   const [name, setName] = useState("Loading...");
   const [hall, setHall] = useState("Loading...");
+
+  const [weeklyShifts, setWeeklyShifts] = useState<AssignmentRow[]>([]);
+  const [pendingIncomingSwapCount, setPendingIncomingSwapCount] = useState(0);
+  const [loadingAlerts, setLoadingAlerts] = useState(true);
 
   useEffect(() => {
     async function loadRA() {
@@ -44,10 +80,42 @@ export default function RAPage() {
       } else {
         setHall("Unassigned");
       }
+
+      await loadAlerts(profile.id);
     }
 
     loadRA();
   }, [router]);
+
+  async function loadAlerts(userId: string) {
+    setLoadingAlerts(true);
+
+    const now = new Date();
+    const weekStart = toDateOnlyString(getStartOfWeek(now));
+    const weekEnd = toDateOnlyString(getEndOfWeek(now));
+
+    const [
+      { data: assignments },
+      { count: swapCount },
+    ] = await Promise.all([
+      supabase
+        .from("schedule_assignments")
+        .select("id, assignment_date, role, residence_hall_id")
+        .eq("assigned_ra_id", userId)
+        .gte("assignment_date", weekStart)
+        .lte("assignment_date", weekEnd)
+        .order("assignment_date", { ascending: true }),
+      supabase
+        .from("swap_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("target_ra_id", userId)
+        .eq("status", "pending"),
+    ]);
+
+    setWeeklyShifts((assignments || []) as AssignmentRow[]);
+    setPendingIncomingSwapCount(swapCount || 0);
+    setLoadingAlerts(false);
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -68,7 +136,7 @@ export default function RAPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-10">
@@ -112,6 +180,56 @@ export default function RAPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-slate-900">My Alerts</h2>
+          <div className="mt-2 h-1 w-24 rounded-full bg-yellow-400" />
+          <p className="mt-3 text-slate-600">
+            Important things you may need to act on.
+          </p>
+        </div>
+
+        {loadingAlerts ? (
+          <div className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+            Loading alerts...
+          </div>
+        ) : (
+          <div className="mb-10 grid gap-6 md:grid-cols-2">
+            <button
+              onClick={() => router.push("/ra/schedule")}
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Incoming Swap Requests
+              </div>
+              <div className="mt-3 text-4xl font-bold text-blue-900">{pendingIncomingSwapCount}</div>
+              <p className="mt-3 text-sm text-slate-600">
+                Pending requests waiting on your approval or rejection.
+              </p>
+            </button>
+
+            <button
+              onClick={() => router.push("/ra/schedule")}
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                This Week&apos;s Shifts
+              </div>
+              <div className="mt-3 space-y-2 text-lg font-bold text-blue-900">
+                {weeklyShifts.length > 0 ? (
+                  weeklyShifts.map((shift) => (
+                    <div key={shift.id}>{formatShortShift(shift.assignment_date, shift.role)}</div>
+                  ))
+                ) : (
+                  <div>None</div>
+                )}
+              </div>
+              <p className="mt-3 text-sm text-slate-600">
+                Your shifts scheduled for this week.
+              </p>
+            </button>
+          </div>
+        )}
+
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Quick Actions</h2>
           <div className="mt-2 h-1 w-24 rounded-full bg-yellow-400" />

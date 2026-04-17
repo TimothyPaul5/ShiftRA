@@ -18,12 +18,14 @@ export default function AdminHallsPage() {
   const [newCapacity, setNewCapacity] = useState("1");
   const [newWeekdayStaff, setNewWeekdayStaff] = useState("1");
   const [newWeekendStaff, setNewWeekendStaff] = useState("1");
+  const [newMinimumAvailabilityDays, setNewMinimumAvailabilityDays] = useState("2");
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editCapacity, setEditCapacity] = useState("");
   const [editWeekdayStaff, setEditWeekdayStaff] = useState("");
   const [editWeekendStaff, setEditWeekendStaff] = useState("");
+  const [editMinimumAvailabilityDays, setEditMinimumAvailabilityDays] = useState("");
 
   useEffect(() => {
     async function checkAdminAndLoad() {
@@ -93,6 +95,7 @@ export default function AdminHallsPage() {
           capacity: Number(newCapacity),
           weekday_staff_needed: Number(newWeekdayStaff),
           weekend_staff_needed: Number(newWeekendStaff),
+          minimum_required_availability_days: Number(newMinimumAvailabilityDays),
         }),
       });
 
@@ -106,6 +109,7 @@ export default function AdminHallsPage() {
       setNewCapacity("1");
       setNewWeekdayStaff("1");
       setNewWeekendStaff("1");
+      setNewMinimumAvailabilityDays("2");
       await loadData();
       setMessage("Residence hall added.");
     } catch (error) {
@@ -119,6 +123,9 @@ export default function AdminHallsPage() {
     setEditCapacity(String(hall.capacity));
     setEditWeekdayStaff(String(hall.weekday_staff_needed));
     setEditWeekendStaff(String(hall.weekend_staff_needed));
+    setEditMinimumAvailabilityDays(
+      String((hall as ResidenceHall & { minimum_required_availability_days?: number }).minimum_required_availability_days ?? 2)
+    );
     setMessage("");
   }
 
@@ -128,6 +135,7 @@ export default function AdminHallsPage() {
     setEditCapacity("");
     setEditWeekdayStaff("");
     setEditWeekendStaff("");
+    setEditMinimumAvailabilityDays("");
   }
 
   async function saveEdit(id: number) {
@@ -152,6 +160,7 @@ export default function AdminHallsPage() {
           capacity: Number(editCapacity),
           weekday_staff_needed: Number(editWeekdayStaff),
           weekend_staff_needed: Number(editWeekendStaff),
+          minimum_required_availability_days: Number(editMinimumAvailabilityDays),
         }),
       });
 
@@ -203,7 +212,7 @@ export default function AdminHallsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-10">
@@ -214,7 +223,7 @@ export default function AdminHallsPage() {
               </div>
               <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Manage Residence Halls</h1>
               <p className="mt-3 max-w-2xl text-blue-100">
-                Add, edit, and remove halls while managing capacity and staffing requirements.
+                Add, edit, and remove halls while managing capacity, staffing requirements, and minimum availability rules.
               </p>
             </div>
 
@@ -290,6 +299,19 @@ export default function AdminHallsPage() {
                 />
               </div>
 
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Minimum Availability Days Required</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="7"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  value={newMinimumAvailabilityDays}
+                  onChange={(e) => setNewMinimumAvailabilityDays(e.target.value)}
+                  required
+                />
+              </div>
+
               <button
                 type="submit"
                 className="w-full rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950 transition hover:brightness-95"
@@ -313,6 +335,9 @@ export default function AdminHallsPage() {
               <div className="space-y-4">
                 {halls.map((hall) => {
                   const assignedCount = getAssignedCount(hall.id);
+                  const hallWithMinimum = hall as ResidenceHall & {
+                    minimum_required_availability_days?: number;
+                  };
 
                   return (
                     <div key={hall.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -360,6 +385,18 @@ export default function AdminHallsPage() {
                             />
                           </div>
 
+                          <div className="md:col-span-2">
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Minimum Availability Days Required</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="7"
+                              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                              value={editMinimumAvailabilityDays}
+                              onChange={(e) => setEditMinimumAvailabilityDays(e.target.value)}
+                            />
+                          </div>
+
                           <div className="md:col-span-2 flex gap-3">
                             <button
                               onClick={() => saveEdit(hall.id)}
@@ -386,6 +423,7 @@ export default function AdminHallsPage() {
                               <p>Assigned RAs: {assignedCount}</p>
                               <p>Weekday Staff Needed: {hall.weekday_staff_needed}</p>
                               <p>Weekend Staff Needed: {hall.weekend_staff_needed}</p>
+                              <p>Minimum Availability Days Required: {hallWithMinimum.minimum_required_availability_days ?? 2}</p>
                             </div>
                           </div>
 

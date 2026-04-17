@@ -12,18 +12,20 @@ import { ResidenceHall } from "@/lib/types";
 type ReadinessIssue = {
   ra_id: string;
   full_name: string;
+  hall_name: string;
   residence_hall_id: number | null;
   submitted_days: number;
+  required_days: number;
 };
 
 type HallCoverageSummary = {
   hall_id: number;
   hall_name: string;
   active_ra_count: number;
+  minimum_required_availability_days: number;
 };
 
 type ScheduleReadinessReport = {
-  minimumRequiredDays: number;
   hallScope: "one" | "all";
   missingAvailability: ReadinessIssue[];
   belowMinimumAvailability: ReadinessIssue[];
@@ -55,6 +57,21 @@ type ScheduleRow = {
   end_date: string;
 };
 
+type AvailabilityRow = {
+  id: number;
+  ra_id: string;
+  day_of_week?: number | null;
+  day?: string | null;
+  weekday?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+};
+
+type ErrorModalState = {
+  title: string;
+  description: string;
+};
+
 const HALL_COLORS = [
   "border-sky-300 bg-sky-50",
   "border-emerald-300 bg-emerald-50",
@@ -65,6 +82,26 @@ const HALL_COLORS = [
   "border-lime-300 bg-lime-50",
   "border-fuchsia-300 bg-fuchsia-50",
 ];
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function formatAvailabilityRow(row: AvailabilityRow) {
+  let dayLabel = "Day";
+
+  if (typeof row.day === "string" && row.day.trim()) {
+    dayLabel = row.day;
+  } else if (typeof row.weekday === "string" && row.weekday.trim()) {
+    dayLabel = row.weekday;
+  } else if (typeof row.day_of_week === "number") {
+    dayLabel = WEEKDAY_LABELS[row.day_of_week] || `Day ${row.day_of_week}`;
+  }
+
+  if (row.start_time && row.end_time) {
+    return `${dayLabel} ${row.start_time}-${row.end_time}`;
+  }
+
+  return dayLabel;
+}
 
 export default function AdminSchedulesPage() {
   const router = useRouter();
@@ -83,6 +120,7 @@ export default function AdminSchedulesPage() {
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
+  const [availabilityRows, setAvailabilityRows] = useState<AvailabilityRow[]>([]);
 
   const [mode, setMode] = useState<"all" | "one">("all");
   const [hallId, setHallId] = useState("");
@@ -90,7 +128,6 @@ export default function AdminSchedulesPage() {
   const [selectedLabel, setSelectedLabel] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [minimumRequiredDays, setMinimumRequiredDays] = useState("2");
   const [readinessReport, setReadinessReport] = useState<ScheduleReadinessReport | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -99,6 +136,13 @@ export default function AdminSchedulesPage() {
   const [newShiftRole, setNewShiftRole] = useState<"Primary" | "Secondary">("Secondary");
   const [newShiftHallId, setNewShiftHallId] = useState("");
   const [newShiftRAId, setNewShiftRAId] = useState("");
+
+  const [showControlsModal, setShowControlsModal] = useState(false);
+  const [showReadinessModal, setShowReadinessModal] = useState(false);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [showFairnessModal, setShowFairnessModal] = useState(false);
+  const [availabilityHallFilter, setAvailabilityHallFilter] = useState("all");
+  const [errorModal, setErrorModal] = useState<ErrorModalState | null>(null);
 
   useEffect(() => {
     async function checkAdminAndLoad() {
@@ -121,6 +165,7 @@ export default function AdminSchedulesPage() {
       { data: hallData, error: hallError },
       { data: profileData, error: profileError },
       { data: scheduleData, error: scheduleError },
+      { data: availabilityData, error: availabilityError },
     ] = await Promise.all([
       supabase.from("residence_halls").select("*").order("name", { ascending: true }),
       supabase
@@ -129,6 +174,7 @@ export default function AdminSchedulesPage() {
         .eq("role", "ra")
         .order("full_name", { ascending: true }),
       supabase.from("schedules").select("*").order("created_at", { ascending: false }),
+      supabase.from("availability").select("*"),
     ]);
 
     if (hallError) {
@@ -149,9 +195,16 @@ export default function AdminSchedulesPage() {
       return;
     }
 
+    if (availabilityError) {
+      setMessage(availabilityError.message);
+      setLoading(false);
+      return;
+    }
+
     setHalls((hallData || []) as ResidenceHall[]);
     setProfiles((profileData || []) as ProfileRow[]);
     setSchedules((scheduleData || []) as ScheduleRow[]);
+    setAvailabilityRows((availabilityData || []) as AvailabilityRow[]);
     setLoading(false);
   }
 
@@ -261,9 +314,55 @@ export default function AdminSchedulesPage() {
       .sort((a, b) => a.role.localeCompare(b.role));
   }, [filteredAssignments, selectedDate]);
 
+  const selectedAssignment =
+    selectedAssignmentId
+      ? selectedDayAssignments.find((row) => row.id === selectedAssignmentId) || null
+      : null;
+
+  const eligibleRAsForSelectedHall = profiles.filter((profile) => {
+    const targetHallId =
+      mode === "one" && hallId
+        ? Number(hallId)
+        : newShiftHallId
+          ? Number(newShiftHallId)
+          : null;
+
+    if (!targetHallId) return true;
+    return profile.residence_hall_id === targetHallId;
+  });
+
+  const availabilityByRA = useMemo(() => {
+    const map = new Map<string, AvailabilityRow[]>();
+
+    for (const row of availabilityRows) {
+      const existing = map.get(row.ra_id) || [];
+      existing.push(row);
+      map.set(row.ra_id, existing);
+    }
+
+    return map;
+  }, [availabilityRows]);
+
+  const availabilityRowsForModal = useMemo(() => {
+    return profiles
+      .filter((profile) => {
+        if (availabilityHallFilter === "all") return true;
+        return String(profile.residence_hall_id ?? "") === availabilityHallFilter;
+      })
+      .map((profile) => {
+        const rows = availabilityByRA.get(profile.id) || [];
+        return {
+          id: profile.id,
+          full_name: profile.full_name,
+          hall_name: profile.residence_hall_id ? getHallName(profile.residence_hall_id) : "Unassigned",
+          count: rows.length,
+          summary: rows.length === 0 ? "No availability submitted." : rows.map(formatAvailabilityRow).join(", "),
+        };
+      });
+  }, [profiles, availabilityHallFilter, availabilityByRA, halls]);
+
   async function checkReadiness() {
     setChecking(true);
-    setMessage("");
     setReadinessReport(null);
 
     try {
@@ -283,7 +382,6 @@ export default function AdminSchedulesPage() {
           mode,
           hallId: mode === "one" ? Number(hallId) : null,
           action: "check",
-          minimumRequiredDays: Number(minimumRequiredDays),
         }),
       });
 
@@ -294,13 +392,13 @@ export default function AdminSchedulesPage() {
       }
 
       setReadinessReport(result.report as ScheduleReadinessReport);
-      setMessage(
-        result.report.hasWarnings
-          ? "Warnings found. Review them below, then choose how to generate."
-          : "No availability warnings found. You can generate normally."
-      );
+      setShowReadinessModal(true);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to check readiness.");
+      setErrorModal({
+        title: "Readiness Check Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to check readiness.",
+      });
     }
 
     setChecking(false);
@@ -331,7 +429,6 @@ export default function AdminSchedulesPage() {
           mode,
           action: "generate",
           overrideIncomplete,
-          minimumRequiredDays: Number(minimumRequiredDays),
         }),
       });
 
@@ -350,8 +447,13 @@ export default function AdminSchedulesPage() {
 
       await loadBaseData();
       await loadCalendarData(calendarYear, calendarMonth, label);
+      setShowControlsModal(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to generate schedule.");
+      setErrorModal({
+        title: "Schedule Generation Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to generate schedule.",
+      });
     }
 
     setGenerating(false);
@@ -359,7 +461,10 @@ export default function AdminSchedulesPage() {
 
   async function clearSelectedSchedule() {
     if (!selectedLabel) {
-      setMessage("Select a schedule label first.");
+      setErrorModal({
+        title: "No Schedule Selected",
+        description: "Select a schedule label first.",
+      });
       return;
     }
 
@@ -396,8 +501,13 @@ export default function AdminSchedulesPage() {
       setSelectedAssignmentId(null);
       await loadBaseData();
       await loadCalendarData(calendarYear, calendarMonth, selectedLabel);
+      setShowControlsModal(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to clear schedule.");
+      setErrorModal({
+        title: "Clear Schedule Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to clear schedule.",
+      });
     }
 
     setClearing(false);
@@ -444,7 +554,11 @@ export default function AdminSchedulesPage() {
       await loadCalendarData(calendarYear, calendarMonth, selectedLabel);
       setMessage("Shift reassigned.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to reassign shift.");
+      setErrorModal({
+        title: "Reassign Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to reassign shift.",
+      });
     }
 
     setSavingEdit(false);
@@ -463,7 +577,11 @@ export default function AdminSchedulesPage() {
       await loadCalendarData(calendarYear, calendarMonth, selectedLabel);
       setMessage("Shift cleared.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to clear shift.");
+      setErrorModal({
+        title: "Clear Assignment Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to clear shift.",
+      });
     }
 
     setSavingEdit(false);
@@ -483,7 +601,11 @@ export default function AdminSchedulesPage() {
       await loadCalendarData(calendarYear, calendarMonth, selectedLabel);
       setMessage("Shift role updated.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to update role.");
+      setErrorModal({
+        title: "Role Update Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to update role.",
+      });
     }
 
     setSavingEdit(false);
@@ -500,7 +622,11 @@ export default function AdminSchedulesPage() {
       setSelectedAssignmentId(null);
       setMessage("Shift deleted.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to delete shift.");
+      setErrorModal({
+        title: "Delete Shift Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to delete shift.",
+      });
     }
 
     setSavingEdit(false);
@@ -536,7 +662,11 @@ export default function AdminSchedulesPage() {
       await loadCalendarData(calendarYear, calendarMonth, selectedLabel);
       setMessage("Shift added.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to add manual shift.");
+      setErrorModal({
+        title: "Add Shift Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to add manual shift.",
+      });
     }
 
     setSavingEdit(false);
@@ -554,25 +684,8 @@ export default function AdminSchedulesPage() {
     setCalendarMonth(next.month);
   }
 
-  const eligibleRAsForSelectedHall = profiles.filter((profile) => {
-    const targetHallId =
-      mode === "one" && hallId
-        ? Number(hallId)
-        : newShiftHallId
-          ? Number(newShiftHallId)
-          : null;
-
-    if (!targetHallId) return true;
-    return profile.residence_hall_id === targetHallId;
-  });
-
-  const selectedAssignment =
-    selectedAssignmentId
-      ? selectedDayAssignments.find((row) => row.id === selectedAssignmentId) || null
-      : null;
-
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-10">
@@ -583,7 +696,7 @@ export default function AdminSchedulesPage() {
               </div>
               <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Schedules</h1>
               <p className="mt-3 max-w-2xl text-blue-100">
-                Generate labeled schedules, review fairness, and edit shifts directly on the calendar.
+                Generate labeled schedules, review fairness, check availability, and edit shifts directly on the calendar.
               </p>
             </div>
 
@@ -604,18 +717,264 @@ export default function AdminSchedulesPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-8">
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-8 flex flex-wrap gap-3">
+          <button
+            onClick={() => setShowControlsModal(true)}
+            className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+          >
+            Schedule Controls
+          </button>
+
+          <button
+            onClick={() => setShowAvailabilityModal(true)}
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm"
+          >
+            Availability
+          </button>
+
+          <button
+            onClick={() => setShowFairnessModal(true)}
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm"
+          >
+            Fairness Summary
+          </button>
+
+          <button
+            onClick={() => {
+              if (readinessReport) {
+                setShowReadinessModal(true);
+              } else {
+                checkReadiness();
+              }
+            }}
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm"
+          >
+            Readiness Report
+          </button>
+        </div>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <button
+              onClick={goToPreviousMonth}
+              className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+            >
+              Previous Month
+            </button>
+
+            <div className="text-sm text-slate-600">
+              {selectedLabel ? `Label: ${selectedLabel}` : "Label: All"}{" "}
+              {mode === "one" && hallId
+                ? `| Hall: ${halls.find((hall) => hall.id === Number(hallId))?.name || "Selected Hall"}`
+                : "| Hall: All"}
+            </div>
+
+            <button
+              onClick={goToNextMonth}
+              className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+            >
+              Next Month
+            </button>
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2">
+            {halls.map((hall) => (
+              <div
+                key={hall.id}
+                className={`rounded-xl border px-3 py-2 text-sm font-medium text-slate-900 ${getHallColorClass(hall.id)}`}
+              >
+                {hall.name}
+              </div>
+            ))}
+          </div>
+
+          <ScheduleMonthCalendar
+            year={calendarYear}
+            month={calendarMonth}
+            shifts={calendarShifts}
+            onDayClick={(date) => {
+              setSelectedDate(date);
+              setSelectedAssignmentId(null);
+              if (mode !== "one") setNewShiftHallId("");
+              setNewShiftRAId("");
+            }}
+            onShiftClick={(shiftId) => {
+              if (!shiftId) return;
+              const shift = filteredAssignments.find((row) => row.id === shiftId);
+              if (!shift) return;
+              setSelectedDate(shift.assignment_date);
+              setSelectedAssignmentId(shiftId);
+            }}
+            selectedShiftId={selectedAssignmentId}
+          />
+        </section>
+
+        {selectedDate ? (
+          <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Schedule Controls</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Edit Day: {selectedDate}</h2>
               <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+            </div>
+
+            <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <h3 className="mb-4 text-lg font-semibold text-slate-900">Quick Add Shift</h3>
+
+              <div className="grid gap-3 md:grid-cols-4">
+                {mode !== "one" ? (
+                  <select
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                    value={newShiftHallId}
+                    onChange={(e) => setNewShiftHallId(e.target.value)}
+                  >
+                    <option value="">Select Hall</option>
+                    {halls.map((hall) => (
+                      <option key={hall.id} value={hall.id}>
+                        {hall.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900">
+                    {halls.find((hall) => hall.id === Number(hallId))?.name || "Selected Hall"}
+                  </div>
+                )}
+
+                <select
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                  value={newShiftRole}
+                  onChange={(e) => setNewShiftRole(e.target.value as "Primary" | "Secondary")}
+                >
+                  <option value="Primary">Primary</option>
+                  <option value="Secondary">Secondary</option>
+                </select>
+
+                <select
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                  value={newShiftRAId}
+                  onChange={(e) => setNewShiftRAId(e.target.value)}
+                >
+                  <option value="">Unassigned</option>
+                  {eligibleRAsForSelectedHall.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.full_name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={handleAddManualShift}
+                  disabled={savingEdit || !selectedLabel}
+                  className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+                >
+                  Add Shift
+                </button>
+              </div>
+            </div>
+
+            {selectedDayAssignments.length === 0 ? (
+              <p className="text-slate-600">No shifts currently on this date.</p>
+            ) : (
+              <div className="space-y-4">
+                {selectedDayAssignments.map((assignment) => {
+                  const eligibleRAs = profiles.filter(
+                    (profile) => profile.residence_hall_id === assignment.residence_hall_id
+                  );
+                  const isSelected = selectedAssignment?.id === assignment.id;
+
+                  return (
+                    <div
+                      key={assignment.id}
+                      className={`rounded-2xl border p-5 ${
+                        isSelected ? "ring-2 ring-black" : ""
+                      } ${getHallColorClass(assignment.residence_hall_id)}`}
+                    >
+                      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div className="text-lg font-bold text-slate-900">
+                            {assignment.role} — {getHallName(assignment.residence_hall_id)}
+                          </div>
+                          <div className="text-sm text-slate-700">
+                            {getRAName(assignment.assigned_ra_id)}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteShift(assignment.id)}
+                          disabled={savingEdit}
+                          className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <select
+                          className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                          value={assignment.assigned_ra_id ?? ""}
+                          onChange={(e) => handleReassign(assignment.id, e.target.value)}
+                          disabled={savingEdit}
+                        >
+                          <option value="">Unassigned</option>
+                          {eligibleRAs.map((profile) => (
+                            <option key={profile.id} value={profile.id}>
+                              {profile.full_name}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                          value={assignment.role}
+                          onChange={(e) =>
+                            handleRoleChange(assignment.id, e.target.value as "Primary" | "Secondary")
+                          }
+                          disabled={savingEdit}
+                        >
+                          <option value="Primary">Primary</option>
+                          <option value="Secondary">Secondary</option>
+                        </select>
+
+                        <button
+                          onClick={() => handleClear(assignment.id)}
+                          disabled={savingEdit}
+                          className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
+                        >
+                          Clear Assignment
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        ) : null}
+      </section>
+
+      {showControlsModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <div className="mb-3 inline-flex rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm text-yellow-700">
+                  Schedule Controls
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Generate and Manage Schedules</h2>
+              </div>
+
+              <button
+                onClick={() => setShowControlsModal(false)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700"
+              >
+                Close
+              </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">Schedule Label</label>
                 <input
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="SP26"
@@ -625,7 +984,7 @@ export default function AdminSchedulesPage() {
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">View Existing Label</label>
                 <select
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900"
                   value={selectedLabel}
                   onChange={(e) => setSelectedLabel(e.target.value)}
                 >
@@ -656,7 +1015,7 @@ export default function AdminSchedulesPage() {
                 <div className="md:col-span-2">
                   <label className="mb-2 block text-sm font-semibold text-slate-700">Residence Hall</label>
                   <select
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900"
                     value={hallId}
                     onChange={(e) => setHallId(e.target.value)}
                   >
@@ -674,7 +1033,7 @@ export default function AdminSchedulesPage() {
                 <label className="mb-2 block text-sm font-semibold text-slate-700">Start Date</label>
                 <input
                   type="date"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
@@ -684,21 +1043,9 @@ export default function AdminSchedulesPage() {
                 <label className="mb-2 block text-sm font-semibold text-slate-700">End Date</label>
                 <input
                   type="date"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Minimum Required Availability Days</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="7"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3"
-                  value={minimumRequiredDays}
-                  onChange={(e) => setMinimumRequiredDays(e.target.value)}
                 />
               </div>
 
@@ -736,116 +1083,157 @@ export default function AdminSchedulesPage() {
                 </button>
               </div>
             </div>
-          </section>
+          </div>
+        </div>
+      ) : null}
 
-          {readinessReport ? (
-            <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Readiness Report</h2>
-                <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+      {showReadinessModal && readinessReport ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-6xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <div className="mb-3 inline-flex rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm text-yellow-700">
+                  Readiness Report
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Availability Warnings and Coverage</h2>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-3">
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold text-slate-900">Hall Coverage</h3>
+              <button
+                onClick={() => setShowReadinessModal(false)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div>
+                <h3 className="mb-3 text-lg font-semibold text-slate-900">Hall Coverage</h3>
+                <div className="space-y-2">
+                  {readinessReport.hallCoverage.map((hall) => (
+                    <div key={hall.hall_id} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {hall.hall_name} — Active RAs: {hall.active_ra_count} — Required: {hall.minimum_required_availability_days}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="mb-3 text-lg font-semibold text-slate-900">No Availability Submitted</h3>
+                {readinessReport.missingAvailability.length === 0 ? (
+                  <p className="text-slate-600">None.</p>
+                ) : (
                   <div className="space-y-2">
-                    {readinessReport.hallCoverage.map((hall) => (
-                      <div key={hall.hall_id} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                        {hall.hall_name} — Active RAs: {hall.active_ra_count}
+                    {readinessReport.missingAvailability.map((ra) => (
+                      <div key={ra.ra_id} className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {ra.full_name} — {ra.hall_name} — Submitted {ra.submitted_days} / Required {ra.required_days}
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold text-slate-900">No Availability Submitted</h3>
-                  {readinessReport.missingAvailability.length === 0 ? (
-                    <p className="text-slate-600">None.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {readinessReport.missingAvailability.map((ra) => (
-                        <div key={ra.ra_id} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                          {ra.full_name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold text-slate-900">
-                    Below Minimum ({readinessReport.minimumRequiredDays} day(s))
-                  </h3>
-                  {readinessReport.belowMinimumAvailability.length === 0 ? (
-                    <p className="text-slate-600">None.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {readinessReport.belowMinimumAvailability.map((ra) => (
-                        <div key={ra.ra_id} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                          {ra.full_name} — Submitted: {ra.submitted_days}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-          ) : null}
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <button onClick={goToPreviousMonth} className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700">
-                Previous Month
-              </button>
-
-              <div className="text-sm text-slate-600">
-                {selectedLabel ? `Label: ${selectedLabel}` : "Label: All"}{" "}
-                {mode === "one" && hallId
-                  ? `| Hall: ${halls.find((hall) => hall.id === Number(hallId))?.name || "Selected Hall"}`
-                  : "| Hall: All"}
+                )}
               </div>
 
-              <button onClick={goToNextMonth} className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700">
-                Next Month
-              </button>
+              <div>
+                <h3 className="mb-3 text-lg font-semibold text-slate-900">
+                  Below Hall Minimum
+                </h3>
+                {readinessReport.belowMinimumAvailability.length === 0 ? (
+                  <p className="text-slate-600">None.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {readinessReport.belowMinimumAvailability.map((ra) => (
+                      <div key={ra.ra_id} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                        {ra.full_name} — {ra.hall_name} — Submitted {ra.submitted_days} / Required {ra.required_days}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showAvailabilityModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-6xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <div className="mb-3 inline-flex rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm text-yellow-700">
+                  Availability
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Availability by Hall</h2>
+              </div>
+
+              <div className="flex gap-3">
+                <select
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                  value={availabilityHallFilter}
+                  onChange={(e) => setAvailabilityHallFilter(e.target.value)}
+                >
+                  <option value="all">All Residence Halls</option>
+                  {halls.map((hall) => (
+                    <option key={hall.id} value={String(hall.id)}>
+                      {hall.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => setShowAvailabilityModal(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-2">
-              {halls.map((hall) => (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {availabilityRowsForModal.map((item) => (
                 <div
-                  key={hall.id}
-                  className={`rounded-xl border px-3 py-2 text-sm font-medium ${getHallColorClass(hall.id)}`}
+                  key={item.id}
+                  className={`rounded-2xl border p-5 ${
+                    item.count === 0
+                      ? "border-red-200 bg-red-50"
+                      : "border-slate-200 bg-slate-50"
+                  }`}
                 >
-                  {hall.name}
+                  <div className="mb-2 inline-flex rounded-lg bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+                    {item.hall_name}
+                  </div>
+
+                  <h3 className="text-lg font-bold text-slate-900">{item.full_name}</h3>
+
+                  <div className={`mt-4 text-sm ${item.count === 0 ? "text-red-800" : "text-slate-700"}`}>
+                    <div className="font-semibold">
+                      {item.count === 0 ? "0 availability entries" : `${item.count} availability entr${item.count === 1 ? "y" : "ies"}`}
+                    </div>
+                    <div className="mt-2">{item.summary}</div>
+                  </div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      ) : null}
 
-            <ScheduleMonthCalendar
-              year={calendarYear}
-              month={calendarMonth}
-              shifts={calendarShifts}
-              onDayClick={(date) => {
-                setSelectedDate(date);
-                setSelectedAssignmentId(null);
-                if (mode !== "one") setNewShiftHallId("");
-                setNewShiftRAId("");
-              }}
-              onShiftClick={(shiftId) => {
-                if (!shiftId) return;
-                const shift = filteredAssignments.find((row) => row.id === shiftId);
-                if (!shift) return;
-                setSelectedDate(shift.assignment_date);
-                setSelectedAssignmentId(shiftId);
-              }}
-              selectedShiftId={selectedAssignmentId}
-            />
-          </section>
+      {showFairnessModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <div className="mb-3 inline-flex rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm text-yellow-700">
+                  Fairness Summary
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Current View Shift Breakdown</h2>
+              </div>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Fairness Summary</h2>
-              <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
+              <button
+                onClick={() => setShowFairnessModal(false)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700"
+              >
+                Close
+              </button>
             </div>
 
             {fairnessSummary.length === 0 ? (
@@ -864,148 +1252,31 @@ export default function AdminSchedulesPage() {
                 ))}
               </div>
             )}
-          </section>
-
-          {selectedDate ? (
-            <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Edit Day: {selectedDate}</h2>
-                <div className="mt-2 h-1 w-20 rounded-full bg-yellow-400" />
-              </div>
-
-              <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <h3 className="mb-4 text-lg font-semibold text-slate-900">Quick Add Shift</h3>
-
-                <div className="grid gap-3 md:grid-cols-4">
-                  {mode !== "one" ? (
-                    <select
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-3"
-                      value={newShiftHallId}
-                      onChange={(e) => setNewShiftHallId(e.target.value)}
-                    >
-                      <option value="">Select Hall</option>
-                      {halls.map((hall) => (
-                        <option key={hall.id} value={hall.id}>
-                          {hall.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="rounded-xl border border-slate-300 bg-white px-4 py-3">
-                      {halls.find((hall) => hall.id === Number(hallId))?.name || "Selected Hall"}
-                    </div>
-                  )}
-
-                  <select
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-3"
-                    value={newShiftRole}
-                    onChange={(e) => setNewShiftRole(e.target.value as "Primary" | "Secondary")}
-                  >
-                    <option value="Primary">Primary</option>
-                    <option value="Secondary">Secondary</option>
-                  </select>
-
-                  <select
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-3"
-                    value={newShiftRAId}
-                    onChange={(e) => setNewShiftRAId(e.target.value)}
-                  >
-                    <option value="">Unassigned</option>
-                    {eligibleRAsForSelectedHall.map((profile) => (
-                      <option key={profile.id} value={profile.id}>
-                        {profile.full_name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={handleAddManualShift}
-                    disabled={savingEdit || !selectedLabel}
-                    className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
-                  >
-                    Add Shift
-                  </button>
-                </div>
-              </div>
-
-              {selectedDayAssignments.length === 0 ? (
-                <p className="text-slate-600">No shifts currently on this date.</p>
-              ) : (
-                <div className="space-y-4">
-                  {selectedDayAssignments.map((assignment) => {
-                    const eligibleRAs = profiles.filter(
-                      (profile) => profile.residence_hall_id === assignment.residence_hall_id
-                    );
-                    const isSelected = selectedAssignment?.id === assignment.id;
-
-                    return (
-                      <div
-                        key={assignment.id}
-                        className={`rounded-2xl border p-5 ${
-                          isSelected ? "ring-2 ring-black" : ""
-                        } ${getHallColorClass(assignment.residence_hall_id)}`}
-                      >
-                        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <div className="text-lg font-bold text-slate-900">
-                              {assignment.role} — {getHallName(assignment.residence_hall_id)}
-                            </div>
-                            <div className="text-sm text-slate-700">{getRAName(assignment.assigned_ra_id)}</div>
-                          </div>
-
-                          <button
-                            onClick={() => handleDeleteShift(assignment.id)}
-                            disabled={savingEdit}
-                            className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
-                          >
-                            Delete
-                          </button>
-                        </div>
-
-                        <div className="grid gap-3 md:grid-cols-3">
-                          <select
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-3"
-                            value={assignment.assigned_ra_id ?? ""}
-                            onChange={(e) => handleReassign(assignment.id, e.target.value)}
-                            disabled={savingEdit}
-                          >
-                            <option value="">Unassigned</option>
-                            {eligibleRAs.map((profile) => (
-                              <option key={profile.id} value={profile.id}>
-                                {profile.full_name}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-3"
-                            value={assignment.role}
-                            onChange={(e) =>
-                              handleRoleChange(assignment.id, e.target.value as "Primary" | "Secondary")
-                            }
-                            disabled={savingEdit}
-                          >
-                            <option value="Primary">Primary</option>
-                            <option value="Secondary">Secondary</option>
-                          </select>
-
-                          <button
-                            onClick={() => handleClear(assignment.id)}
-                            disabled={savingEdit}
-                            className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
-                          >
-                            Clear Assignment
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          ) : null}
+          </div>
         </div>
-      </section>
+      ) : null}
+
+      {errorModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-4 inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-sm text-red-700">
+              Error
+            </div>
+
+            <h2 className="text-2xl font-bold text-slate-900">{errorModal.title}</h2>
+            <p className="mt-3 text-slate-700">{errorModal.description}</p>
+
+            <div className="mt-6">
+              <button
+                onClick={() => setErrorModal(null)}
+                className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

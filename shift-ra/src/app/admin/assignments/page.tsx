@@ -6,6 +6,11 @@ import { getCurrentProfile } from "@/lib/auth/getCurrentProfile";
 import { supabase } from "@/lib/supabase";
 import { Profile, ResidenceHall } from "@/lib/types";
 
+type ErrorModalState = {
+  title: string;
+  description: string;
+};
+
 export default function AdminAssignmentsPage() {
   const router = useRouter();
 
@@ -14,6 +19,7 @@ export default function AdminAssignmentsPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [halls, setHalls] = useState<ResidenceHall[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [errorModal, setErrorModal] = useState<ErrorModalState | null>(null);
 
   useEffect(() => {
     async function checkAdminAndLoad() {
@@ -36,8 +42,15 @@ export default function AdminAssignmentsPage() {
 
     const [{ data: profileData, error: profileError }, { data: hallData, error: hallError }] =
       await Promise.all([
-        supabase.from("profiles").select("*").eq("role", "ra").order("full_name", { ascending: true }),
-        supabase.from("residence_halls").select("*").order("name", { ascending: true }),
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("role", "ra")
+          .order("full_name", { ascending: true }),
+        supabase
+          .from("residence_halls")
+          .select("*")
+          .order("name", { ascending: true }),
       ]);
 
     if (profileError) {
@@ -92,13 +105,28 @@ export default function AdminAssignmentsPage() {
       const result = await response.json();
 
       if (!response.ok) {
+        if (result.code === "USER_HAS_SCHEDULES") {
+          setErrorModal({
+            title: "Residence Hall Change Blocked",
+            description:
+              "This RA still has scheduled shifts. Clear or reassign those shifts before changing their residence hall.",
+          });
+          return;
+        }
+
         throw new Error(result.error || "Failed to update hall assignment.");
       }
 
       await loadData();
       setMessage("RA assignment updated.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to update hall assignment.");
+      setErrorModal({
+        title: "Update Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update residence hall assignment.",
+      });
     }
 
     setSavingId(null);
@@ -112,7 +140,7 @@ export default function AdminAssignmentsPage() {
   }, [halls, profiles]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-10">
@@ -121,7 +149,9 @@ export default function AdminAssignmentsPage() {
               <div className="mb-3 inline-flex rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-sm text-yellow-200">
                 RA Placement
               </div>
-              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">RA Assignments</h1>
+              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+                RA Assignments
+              </h1>
               <p className="mt-3 max-w-2xl text-blue-100">
                 Move RAs between halls, unassign them when needed, and review hall capacity at a glance.
               </p>
@@ -139,14 +169,17 @@ export default function AdminAssignmentsPage() {
 
       <section className="mx-auto max-w-7xl px-6 py-10">
         {message ? (
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-slate-700 shadow-sm">
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-slate-800 shadow-sm">
             {message}
           </div>
         ) : null}
 
         <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {summary.map((hall) => (
-            <div key={hall.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div
+              key={hall.id}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
               <div className="mb-2 inline-flex rounded-lg bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
                 {hall.name}
               </div>
@@ -189,7 +222,7 @@ export default function AdminAssignmentsPage() {
                       Assign Residence Hall
                     </label>
                     <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       value={profile.residence_hall_id ?? ""}
                       onChange={(e) => updateRAHall(profile.id, e.target.value)}
                       disabled={savingId === profile.id}
@@ -212,6 +245,28 @@ export default function AdminAssignmentsPage() {
           )}
         </section>
       </section>
+
+      {errorModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-4 inline-flex rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm text-yellow-700">
+              Action Blocked
+            </div>
+
+            <h2 className="text-2xl font-bold text-slate-900">{errorModal.title}</h2>
+            <p className="mt-3 text-slate-700">{errorModal.description}</p>
+
+            <div className="mt-6">
+              <button
+                onClick={() => setErrorModal(null)}
+                className="rounded-xl border border-yellow-400/40 bg-yellow-400 px-5 py-3 font-semibold text-blue-950"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

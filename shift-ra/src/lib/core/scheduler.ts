@@ -20,21 +20,32 @@ type AvailabilityRowLike = {
   is_available: boolean;
 };
 
+type HallWithMinimum = {
+  id: number;
+  name: string;
+  capacity: number;
+  weekday_staff_needed: number;
+  weekend_staff_needed: number;
+  minimum_required_availability_days?: number;
+};
+
 export type ReadinessIssue = {
   ra_id: string;
   full_name: string;
+  hall_name: string;
   residence_hall_id: number | null;
   submitted_days: number;
+  required_days: number;
 };
 
 export type HallCoverageSummary = {
   hall_id: number;
   hall_name: string;
   active_ra_count: number;
+  minimum_required_availability_days: number;
 };
 
 export type ScheduleReadinessReport = {
-  minimumRequiredDays: number;
   hallScope: "one" | "all";
   missingAvailability: ReadinessIssue[];
   belowMinimumAvailability: ReadinessIssue[];
@@ -109,13 +120,18 @@ function uniqueSubmittedDaysForRA(availability: AvailabilityRowLike[], raId: str
   );
 }
 
-function buildEffectiveAvailability(params: {
+function getHallMinimum(hall: HallWithMinimum) {
+  return hall.minimum_required_availability_days ?? 2;
+}
+
+function buildEffectiveAvailabilityForHall(params: {
   availability: AvailabilityRowLike[];
+  hall: HallWithMinimum;
   ras: Profile[];
-  minimumRequiredDays: number;
   overrideIncomplete: boolean;
 }) {
-  const { availability, ras, minimumRequiredDays, overrideIncomplete } = params;
+  const { availability, hall, ras, overrideIncomplete } = params;
+  const minimumRequiredDays = getHallMinimum(hall);
 
   const effective = [...availability];
   const seen = new Set(
@@ -137,15 +153,19 @@ function buildEffectiveAvailability(params: {
       missingAvailability.push({
         ra_id: ra.id,
         full_name: ra.full_name,
+        hall_name: hall.name,
         residence_hall_id: ra.residence_hall_id,
         submitted_days: 0,
+        required_days: minimumRequiredDays,
       });
     } else if (count < minimumRequiredDays) {
       belowMinimumAvailability.push({
         ra_id: ra.id,
         full_name: ra.full_name,
+        hall_name: hall.name,
         residence_hall_id: ra.residence_hall_id,
         submitted_days: count,
+        required_days: minimumRequiredDays,
       });
     }
 
@@ -173,16 +193,16 @@ function buildEffectiveAvailability(params: {
 
 export async function assessScheduleReadiness(params: {
   hallId?: number | null;
-  minimumRequiredDays?: number;
 }) {
-  const { hallId = null, minimumRequiredDays = 2 } = params;
+  const { hallId = null } = params;
 
-  const [halls, profiles, availability] = await Promise.all([
+  const [hallsRaw, profiles, availability] = await Promise.all([
     getAllHalls(),
     getAllProfiles(),
     getAllAvailability(),
   ]);
 
+  const halls = hallsRaw as HallWithMinimum[];
   const scopedHalls = hallId ? halls.filter((hall) => hall.id === hallId) : halls;
 
   if (scopedHalls.length === 0) {
@@ -199,21 +219,31 @@ export async function assessScheduleReadiness(params: {
       scopedHallIds.has(profile.residence_hall_id)
   );
 
-  const { missingAvailability, belowMinimumAvailability } = buildEffectiveAvailability({
-    availability,
-    ras: scopedRAs,
-    minimumRequiredDays,
-    overrideIncomplete: false,
-  });
+  const missingAvailability: ReadinessIssue[] = [];
+  const belowMinimumAvailability: ReadinessIssue[] = [];
+
+  for (const hall of scopedHalls) {
+    const hallRAs = scopedRAs.filter((ra) => ra.residence_hall_id === hall.id);
+
+    const hallResult = buildEffectiveAvailabilityForHall({
+      availability,
+      hall,
+      ras: hallRAs,
+      overrideIncomplete: false,
+    });
+
+    missingAvailability.push(...hallResult.missingAvailability);
+    belowMinimumAvailability.push(...hallResult.belowMinimumAvailability);
+  }
 
   const hallCoverage: HallCoverageSummary[] = scopedHalls.map((hall) => ({
     hall_id: hall.id,
     hall_name: hall.name,
     active_ra_count: scopedRAs.filter((ra) => ra.residence_hall_id === hall.id).length,
+    minimum_required_availability_days: getHallMinimum(hall),
   }));
 
   return {
-    minimumRequiredDays,
     hallScope: hallId ? "one" : "all",
     missingAvailability,
     belowMinimumAvailability,
@@ -238,7 +268,6 @@ export async function generateScheduleForHall(params: {
   endDate: string;
   createdBy: string | null;
   overrideIncomplete?: boolean;
-  minimumRequiredDays?: number;
 }) {
   const {
     label,
@@ -247,15 +276,15 @@ export async function generateScheduleForHall(params: {
     endDate,
     createdBy,
     overrideIncomplete = false,
-    minimumRequiredDays = 2,
   } = params;
 
-  const [halls, profiles, availability] = await Promise.all([
+  const [hallsRaw, profiles, availability] = await Promise.all([
     getAllHalls(),
     getAllProfiles(),
     getAllAvailability(),
   ]);
 
+  const halls = hallsRaw as HallWithMinimum[];
   const hall = halls.find((h) => h.id === hallId);
   if (!hall) throw new Error("Residence hall not found.");
 
@@ -266,10 +295,10 @@ export async function generateScheduleForHall(params: {
     throw new Error(`No active RAs assigned to ${hall.name}.`);
   }
 
-  const { effectiveAvailability } = buildEffectiveAvailability({
+  const { effectiveAvailability } = buildEffectiveAvailabilityForHall({
     availability,
+    hall,
     ras: hallRAs,
-    minimumRequiredDays,
     overrideIncomplete,
   });
 
@@ -331,7 +360,6 @@ export async function generateScheduleForAllHalls(params: {
   endDate: string;
   createdBy: string | null;
   overrideIncomplete?: boolean;
-  minimumRequiredDays?: number;
 }) {
   const {
     label,
@@ -339,10 +367,10 @@ export async function generateScheduleForAllHalls(params: {
     endDate,
     createdBy,
     overrideIncomplete = false,
-    minimumRequiredDays = 2,
   } = params;
 
-  const halls = await getAllHalls();
+  const hallsRaw = await getAllHalls();
+  const halls = hallsRaw as HallWithMinimum[];
   const results = [];
 
   for (const hall of halls) {
@@ -353,7 +381,6 @@ export async function generateScheduleForAllHalls(params: {
       endDate,
       createdBy,
       overrideIncomplete,
-      minimumRequiredDays,
     });
     results.push(generated);
   }

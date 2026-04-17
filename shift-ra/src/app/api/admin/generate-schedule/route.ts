@@ -54,13 +54,11 @@ export async function POST(req: NextRequest) {
       mode,
       action = "generate",
       overrideIncomplete = false,
-      minimumRequiredDays = 2,
     } = body;
 
     if (action === "check") {
       const report = await assessScheduleReadiness({
         hallId: mode === "one" ? Number(hallId) : null,
-        minimumRequiredDays: Number(minimumRequiredDays),
       });
 
       return NextResponse.json({
@@ -112,7 +110,6 @@ export async function POST(req: NextRequest) {
         endDate,
         createdBy: callerUser.id,
         overrideIncomplete: Boolean(overrideIncomplete),
-        minimumRequiredDays: Number(minimumRequiredDays),
       });
 
       return NextResponse.json({
@@ -129,7 +126,6 @@ export async function POST(req: NextRequest) {
       endDate,
       createdBy: callerUser.id,
       overrideIncomplete: Boolean(overrideIncomplete),
-      minimumRequiredDays: Number(minimumRequiredDays),
     });
 
     return NextResponse.json({

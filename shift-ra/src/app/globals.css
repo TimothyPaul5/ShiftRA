@@ -24,3 +24,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Force readable light theme even when browser/device is in dark mode */
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+input,
+select,
+textarea,
+button {
+  color: #0f172a;
+}
+
+::placeholder {
+  color: #64748b;
+  opacity: 1;
+}

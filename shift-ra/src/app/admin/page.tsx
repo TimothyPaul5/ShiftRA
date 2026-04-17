@@ -5,9 +5,24 @@ import { useRouter } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/getCurrentProfile";
 import { supabase } from "@/lib/supabase";
 
+type ProfileRow = {
+  id: string;
+  full_name: string;
+  role: "admin" | "ra";
+};
+
+type AvailabilityRow = {
+  id: number;
+  ra_id: string;
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [name, setName] = useState("Loading...");
+
+  const [pendingResetCount, setPendingResetCount] = useState(0);
+  const [raMissingAvailabilityCount, setRAMissingAvailabilityCount] = useState(0);
+  const [loadingAlerts, setLoadingAlerts] = useState(true);
 
   useEffect(() => {
     async function loadAdmin() {
@@ -19,10 +34,42 @@ export default function AdminPage() {
       }
 
       setName(result.profile.full_name);
+      await loadDashboardAlerts();
     }
 
     loadAdmin();
   }, [router]);
+
+  async function loadDashboardAlerts() {
+    setLoadingAlerts(true);
+
+    const [
+      { count: resetCount },
+      { data: raProfiles },
+      { data: availabilityRows },
+    ] = await Promise.all([
+      supabase
+        .from("password_reset_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("role", "ra"),
+      supabase
+        .from("availability")
+        .select("id, ra_id"),
+    ]);
+
+    const raProfileRows = (raProfiles || []) as ProfileRow[];
+    const availability = (availabilityRows || []) as AvailabilityRow[];
+    const uniqueAvailableRAIds = new Set(availability.map((row) => row.ra_id));
+    const missingAvailability = raProfileRows.filter((ra) => !uniqueAvailableRAIds.has(ra.id));
+
+    setPendingResetCount(resetCount || 0);
+    setRAMissingAvailabilityCount(missingAvailability.length);
+    setLoadingAlerts(false);
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -53,7 +100,7 @@ export default function AdminPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#facc15,_transparent_30%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-10">
@@ -97,6 +144,48 @@ export default function AdminPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-slate-900">Admin Alerts</h2>
+          <div className="mt-2 h-1 w-24 rounded-full bg-yellow-400" />
+          <p className="mt-3 text-slate-600">
+            Important items that need attention.
+          </p>
+        </div>
+
+        {loadingAlerts ? (
+          <div className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+            Loading alerts...
+          </div>
+        ) : (
+          <div className="mb-10 grid gap-6 md:grid-cols-2">
+            <button
+              onClick={() => router.push("/admin/users")}
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Password Reset Requests
+              </div>
+              <div className="mt-3 text-4xl font-bold text-blue-900">{pendingResetCount}</div>
+              <p className="mt-3 text-sm text-slate-600">
+                Users waiting for a new temporary password.
+              </p>
+            </button>
+
+            <button
+              onClick={() => router.push("/admin/schedules")}
+              className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Missing Availability
+              </div>
+              <div className="mt-3 text-4xl font-bold text-blue-900">{raMissingAvailabilityCount}</div>
+              <p className="mt-3 text-sm text-slate-600">
+                RAs with no saved availability on file.
+              </p>
+            </button>
+          </div>
+        )}
+
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Operations Menu</h2>
           <div className="mt-2 h-1 w-24 rounded-full bg-yellow-400" />
