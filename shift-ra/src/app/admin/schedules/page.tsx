@@ -93,7 +93,17 @@ function formatAvailabilityRow(row: AvailabilityRow) {
   } else if (typeof row.weekday === "string" && row.weekday.trim()) {
     dayLabel = row.weekday;
   } else if (typeof row.day_of_week === "number") {
-    dayLabel = WEEKDAY_LABELS[row.day_of_week] || `Day ${row.day_of_week}`;
+    const dayMap: Record<number, string> = {
+      1: "Mon",
+      2: "Tue",
+      3: "Wed",
+      4: "Thu",
+      5: "Fri",
+      6: "Sat",
+      7: "Sun",
+    };
+
+    dayLabel = dayMap[row.day_of_week] || `Day ${row.day_of_week}`;
   }
 
   if (row.start_time && row.end_time) {
